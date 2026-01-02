@@ -1,33 +1,40 @@
+"use client";
+
 import Link from "next/link";
 import Container from "./Container";
+import { useTextMode } from "./TextModeProvider";
 
-const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <Link
-    href={href}
-    className="text-sm text-[rgb(var(--muted))] hover:text-[rgb(var(--fg))] transition"
-  >
-    {children}
+const NavLink = ({ href, label }: { href: string; label: string }) => (
+  <Link href={href} className="text-xs tracking-[0.18em] uppercase text-[rgb(var(--muted))] hover:text-[rgb(var(--fg))] transition">
+    {label}
   </Link>
 );
 
 export default function Header() {
+  const { textMode, toggle } = useTextMode();
+
   return (
-    <header className="sticky top-0 z-50 border-b border-black/10 bg-[rgb(var(--bg))]/80 backdrop-blur">
+    <header className="border-b border-[rgba(var(--line),0.12)]">
       <Container>
-        <div className="flex h-14 items-center justify-between">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            CM
-          </Link>
-          <nav className="flex items-center gap-5">
-            <NavLink href="/work">Work</NavLink>
-            <NavLink href="/about">About</NavLink>
-            <NavLink href="/contact">Contact</NavLink>
-            <a
-              href="/cv.pdf"
-              className="text-sm text-[rgb(var(--fg))] hover:opacity-70 transition"
+        <div className="h-14 flex items-center justify-between">
+          <div className="text-xs tracking-[0.18em] uppercase text-[rgb(var(--muted))]">
+            Editorial Monochrome
+          </div>
+
+          <nav className="flex items-center gap-3">
+            <NavLink href="/work" label="Work" />
+            <span className="opacity-40">/</span>
+            <NavLink href="/about" label="About" />
+            <span className="opacity-40">/</span>
+            <NavLink href="/contact" label="Contact" />
+            <span className="opacity-40">/</span>
+            <button
+              type="button"
+              onClick={toggle}
+              className="text-xs tracking-[0.18em] uppercase text-[rgb(var(--muted))] hover:text-[rgb(var(--fg))] transition"
             >
-              CV
-            </a>
+              Text mode {textMode ? "On" : "Off"}
+            </button>
           </nav>
         </div>
       </Container>

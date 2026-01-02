@@ -1,10 +1,9 @@
-// src/app/layout.tsx
 import "./globals.css";
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 
-const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const serif = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
   title: "Carlos Mata",
@@ -13,9 +12,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${grotesk.variable} ${inter.variable}`}>
-      <body>{children}</body>
+    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+      <body className="font-[var(--font-sans)]">{children}</body>
     </html>
   );
 }
-

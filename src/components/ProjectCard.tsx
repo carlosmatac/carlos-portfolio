@@ -1,38 +1,54 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import type { Project } from "../content/projects"
+import type { Project } from "@/content/projects";
+import { useTextMode } from "./TextModeProvider";
 
 export default function ProjectCard({ p }: { p: Project }) {
+  const { textMode } = useTextMode();
+
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-      <Link
-        href={`/work/${p.slug}`}
-        className="group block rounded-2xl border border-black/10 bg-white/40 p-5 hover:bg-white/60 transition"
+    <Link href={`/work#${p.slug}`} className="group block">
+      <motion.div
+        whileHover={{ y: -4 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-xl border border-[rgba(var(--line),0.14)] bg-white/25 overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h3 className="text-lg font-semibold tracking-tight">{p.title}</h3>
-          <span className="text-xs text-[rgb(var(--muted))]">{p.year}</span>
+        <div className="aspect-[16/10] bg-black/5 relative">
+          <Image src={p.thumb} alt={p.title} fill className="object-cover grayscale" />
         </div>
 
-        <p className="mt-2 text-sm text-[rgb(var(--muted))]">{p.oneLiner}</p>
+        <div className="p-5">
+          <div className="font-[var(--font-serif)] text-2xl tracking-tight leading-none">
+            {p.title}
+          </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {p.tags.map((t) => (
-            <span
-              key={t}
-              className="text-xs rounded-full border border-black/10 px-2 py-1 text-[rgb(var(--muted))] group-hover:text-[rgb(var(--fg))] transition"
-            >
-              {t}
-            </span>
-          ))}
-        </div>
+          {!textMode && (
+            <div className="mt-2 text-sm text-[rgb(var(--muted))]">
+              {p.oneLiner}
+            </div>
+          )}
 
-        <div className="mt-4 text-sm text-[rgb(var(--accent))] opacity-0 group-hover:opacity-100 transition">
-          View case →
+          {!textMode && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {p.tags.map((t) => (
+                <span
+                  key={t}
+                  className="text-[11px] px-2 py-1 rounded-full border border-[rgba(var(--line),0.14)]
+                             text-[rgb(var(--muted))] uppercase tracking-[0.12em]"
+                >
+                  {t}
+                </span>
+              ))}
+              <span className="ml-auto inline-flex items-center gap-2 text-[11px] text-[rgb(var(--muted))] uppercase tracking-[0.12em]">
+                <span className="h-2 w-2 rounded-full bg-[rgb(var(--accent))]" />
+              </span>
+            </div>
+          )}
         </div>
-      </Link>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 }
