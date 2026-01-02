@@ -1,6 +1,8 @@
 import Container from "@/components/Container";
 import ProjectGrid from "@/components/ProjectGrid";
 import { projects } from "@/content/projects";
+import ProjectPanel from "@/components/ProjectPanel";
+
 import Link from "next/link";
 
 export default function HomePage() {
@@ -12,10 +14,10 @@ export default function HomePage() {
         </h1>
 
         <div className="mt-4 text-sm md:text-base uppercase tracking-[0.18em] text-[rgb(var(--muted))]">
-          Software Engineer → Data Architect
+          SOFTWARE ENGINEER → DATA ARCHITECT
         </div>
         <div className="mt-2 text-sm md:text-base uppercase tracking-[0.18em] text-[rgb(var(--muted))]">
-          C++ / ROS2 / Qt · Data Platforms · Madrid
+          C++ / ROS2 / QT · DATA PLATFORMS · MADRID
         </div>
 
         <div className="mt-7 flex justify-center gap-3">
@@ -38,9 +40,17 @@ export default function HomePage() {
         </div>
       </section>
 
+
+      {/* PANEL de proyectos (como en la referencia) */}
       <section className="pb-16">
-        <ProjectGrid projects={projects} />
+        <ProjectPanel>
+          <ProjectGrid projects={projects} />
+        </ProjectPanel>
+
+
       </section>
+
     </Container>
+  
   );
 }

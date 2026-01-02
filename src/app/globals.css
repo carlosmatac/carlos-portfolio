@@ -1,13 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root{
-  --bg: 247 246 242;      /* off-white */
-  --fg: 17 17 17;         /* near-black */
-  --muted: 95 95 95;      /* text secondary */
-  --line: 0 0 0;          /* for borders with opacity */
-  --accent: 60 200 120;   /* tiny green dot accent */
+  --bg: 247 246 242;
+  --fg: 17 17 17;
+  --muted: 95 95 95;
+  --line: 0 0 0;
+  --accent: 60 200 120;
 }
 
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
