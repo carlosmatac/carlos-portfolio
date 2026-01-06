@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import type { Project } from "@/content/projects";
+import type { CaseStudy } from "@/content/projects";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
 
-export default function ProjectRow({ p, index }: { p: Project; index: number }) {
+export default function ProjectRow({ p, index }: { p: CaseStudy; index: number }) {
   return (
     <Link href={`/work#${p.slug}`} className="group block">
       <div className="py-5 md:py-6 transition-transform duration-200 ease-out group-hover:translate-x-[2px]">

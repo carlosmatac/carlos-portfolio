@@ -8,6 +8,14 @@
   --accent: 60 200 120;
 }
 
+.dark {
+  --bg: 17 17 17;
+  --fg: 247 246 242;
+  --muted: 160 160 160;
+  --line: 255 255 255;
+  --accent: 60 200 120;
+}
+
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 body { background: rgb(var(--bg)); color: rgb(var(--fg)); }
 

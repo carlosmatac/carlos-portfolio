@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import type { Project } from "@/content/projects";
+import type { CaseStudy } from "@/content/projects";
 import { useTextMode } from "./TextModeProvider";
 
 function Placeholder() {
@@ -23,7 +23,7 @@ function Placeholder() {
   );
 }
 
-export default function ProjectCard({ p }: { p: Project }) {
+export default function ProjectCard({ p }: { p: CaseStudy }) {
   const { textMode } = useTextMode();
 
   // En cards mode, sí mostramos todo. En text mode, normalmente ni se usa este componente,
@@ -31,7 +31,7 @@ export default function ProjectCard({ p }: { p: Project }) {
   const showDetails = !textMode;
 
   return (
-    <Link href={`/work#${p.slug}`} className="group block">
+    <Link href={`/work/${p.slug}`} className="group block">
       <motion.article
         whileHover={{ y: -2 }}
         transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}

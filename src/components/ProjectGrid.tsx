@@ -1,11 +1,11 @@
 "use client";
 
-import type { Project } from "@/content/projects";
+import type { CaseStudy } from "@/content/projects";
 import ProjectCard from "./ProjectCard";
 import ProjectRow from "./ProjectRow";
 import { useTextMode } from "./TextModeProvider";
 
-export default function ProjectGrid({ projects }: { projects: Project[] }) {
+export default function ProjectGrid({ projects }: { projects: CaseStudy[] }) {
   const { textMode } = useTextMode();
 
   if (textMode) {

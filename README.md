@@ -24,7 +24,7 @@ This repository contains the personal portfolio of **Carlos Mata**, a **Software
   - visual card view (`ProjectCard`) and
   - editorial index-style rows (`ProjectRow`),
   depending on `textMode`.
-- `src/content/projects.ts`: typed data source (`Project[]`) with highlighted projects like `PROJECT AURA`, `SYNAPSE DATA` and `QUANTUM EDGE`, including `slug`, short description and tech tags.
+- `src/content/projects.ts`: typed data source (`CaseStudy[]`) with detailed case studies like `PROJECT AURA`, `SYNAPSE DATA` and `QUANTUM EDGE`, including `slug`, description, tags, context, problem, approach, outcome, and metadata (year, role, status, duration).
 
 ### Key portfolio features
 
