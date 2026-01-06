@@ -35,7 +35,7 @@ export default function Header() {
             onClick={toggleTheme}
             className="rounded-md border border-[rgba(var(--line),0.22)] px-3 py-1 hover:bg-black/5 dark:hover:bg-white/5 transition"
           >
-            {darkMode ? "☀️" : "🌙"}
+            {darkMode ? "LIGHT MODE" : "DARK MODE"}
           </button>
         </nav>
       </div>
