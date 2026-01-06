@@ -1,6 +1,6 @@
 ## Carlos Mata – Portfolio (Provisional README)
 
-This repository contains the personal portfolio of **Carlos Mata**, focused on his role as a **Software Engineer → Data Architect**, with experience in **C++ / ROS2 / Qt**, data platforms and **Linux** environments.
+This repository contains the personal portfolio of **Carlos Mata**, a **Software Engineer** with experience in **C++ / ROS2 / Qt**, data platforms and **Linux** environments.
 
 ### Main technologies
 
@@ -28,7 +28,7 @@ This repository contains the personal portfolio of **Carlos Mata**, focused on h
 
 ### Key portfolio features
 
-- **Clear hero**: full name, role transition (`Software Engineer → Data Architect`), main tech stack and location (Madrid).
+- **Clear hero**: full name, role (`Software Engineer`), main tech stack and location (Madrid).
 - **Project listing**:
   - Animated cards with Framer Motion (`ProjectCard`) linked to anchors in `Work` (`/work#slug`).
   - Alternative text mode view (`ProjectRow`) with numbering, short description and tags on the right.

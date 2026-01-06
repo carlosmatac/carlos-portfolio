@@ -3,11 +3,15 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const serif = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
+const serif = Playfair_Display({ 
+  subsets: ["latin"], 
+  weight: ["400", "700", "900"],
+  variable: "--font-serif" 
+});
 
 export const metadata: Metadata = {
   title: "Carlos Mata",
-  description: "Software Engineer → Data Architect",
+  description: "Software Engineer",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

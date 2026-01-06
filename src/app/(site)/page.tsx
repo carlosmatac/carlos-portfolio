@@ -9,12 +9,12 @@ export default function HomePage() {
   return (
     <Container>
       <section className="py-14 md:py-16 text-center">
-        <h1 className="font-[var(--font-serif)] text-[clamp(3.2rem,9vw,6.8rem)] leading-[0.85] tracking-[-0.03em]">
+        <h1 className="font-[var(--font-serif)] font-black text-[clamp(3.2rem,9vw,6.8rem)] leading-[0.9] tracking-[-0.02em]">
           CARLOS MATA
         </h1>
 
         <div className="mt-4 text-sm md:text-base uppercase tracking-[0.18em] text-[rgb(var(--muted))]">
-          SOFTWARE ENGINEER → DATA ARCHITECT
+          SOFTWARE ENGINEER
         </div>
         <div className="mt-2 text-sm md:text-base uppercase tracking-[0.18em] text-[rgb(var(--muted))]">
           C++ / ROS2 / QT · DATA PLATFORMS · MADRID
@@ -30,7 +30,8 @@ export default function HomePage() {
             View Work
           </Link>
           <a
-            href="/cv.pdf"
+            href="/CarlosMata-Resume.pdf"
+            download
             className="px-4 py-2 text-xs uppercase tracking-[0.18em]
                        border border-[rgba(var(--line),0.18)] rounded-md
                        hover:bg-black/5 transition"

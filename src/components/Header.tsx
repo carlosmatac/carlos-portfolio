@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { useTextMode } from "@/components/TextModeProvider";
 
+
 export default function Header() {
   const { textMode, toggle } = useTextMode();
 
   return (
     <header className="border-b border-[rgba(var(--line),0.14)]">
       <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-        <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
+        <Link href="/" className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))] hover:text-[rgb(var(--fg))] transitione">
           Editorial Monochrome
-        </div>
+        </Link>
 
         <nav className="flex items-center gap-4 text-xs uppercase tracking-[0.22em]">
           <Link href="/work" className="hover:underline">Work</Link>
