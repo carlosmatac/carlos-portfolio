@@ -26,75 +26,56 @@ function Placeholder() {
 export default function ProjectCard({ p }: { p: CaseStudy }) {
   const { textMode } = useTextMode();
 
-  // En cards mode, sí mostramos todo. En text mode, normalmente ni se usa este componente,
-  // pero por si acaso lo dejamos “title only”.
-  const showDetails = !textMode;
+  if (textMode) {
+    return (
+      <Link href={`/work/${p.slug}`} className="block py-4 border-b border-black/[0.1] dark:border-white/[0.1] group">
+        <div className="flex justify-between items-baseline">
+          <h3 className="font-serif text-xl uppercase tracking-wider group-hover:underline">{p.title}</h3>
+          <span className="text-xs uppercase tracking-widest text-gray-500">{p.tags[0]}</span>
+        </div>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 max-w-2xl">{p.oneLiner}</p>
+      </Link>
+    );
+  }
 
   return (
-    <Link href={`/work/${p.slug}`} className="group block">
-      <motion.article
-        whileHover={{ y: -2 }}
-        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className="rounded-[18px] border border-[rgba(var(--line),0.18)] bg-black/[0.02]"
-      >
-        {/* Inner frame (paper) */}
-        <div className="m-[10px] rounded-[14px] border border-[rgba(var(--line),0.12)] bg-[rgb(var(--bg))]">
-          {/* Top: thumbnail as “plate” */}
-          <div className="p-4">
-            <div className="rounded-[14px] border border-[rgba(var(--line),0.14)] bg-black/[0.03] p-3">
-              <div className="relative aspect-[16/10] overflow-hidden rounded-[10px] border border-[rgba(var(--line),0.12)] bg-black/[0.02]">
-                {p.thumb ? (
-                  <Image
-                    src={p.thumb}
-                    alt={p.title}
-                    fill
-                    className="object-cover transition duration-300 ease-out grayscale group-hover:grayscale-0"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
-                ) : (
-                  <Placeholder />
-                )}
-              </div>
-            </div>
-          </div>
+    <Link href={`/work/${p.slug}`} className="group block mb-12">
+      {/* Image container */}
+      <div className="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-6">
+        {p.thumb ? (
+          <Image
+            src={p.thumb}
+            alt={p.title}
+            fill
+            className="object-cover transition duration-700 ease-out grayscale group-hover:grayscale-0 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+        ) : (
+          <Placeholder />
+        )}
+      </div>
 
-          {/* Bottom: editorial text block */}
-          <div className="px-6 pb-6">
-            <h3 className="font-[var(--font-serif)] uppercase tracking-[-0.015em] leading-[1.02] text-[22px] md:text-[24px]
-                group-hover:underline underline-offset-4 decoration-[rgba(var(--line),0.35)]">
-              {p.title}
-            </h3>
+      {/* Text Content */}
+      <div className="flex flex-col gap-2">
+        <h3 className="font-serif text-3xl md:text-4xl uppercase leading-none tracking-tight group-hover:underline decoration-1 underline-offset-4">
+          {p.title}
+        </h3>
 
-            {showDetails && (
-              <p className="mt-2 text-sm text-[rgb(var(--muted))] leading-relaxed max-w-[34ch]">
-                {p.oneLiner}
-              </p>
-            )}
+        <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed max-w-[90%]">
+          {p.oneLiner}
+        </p>
 
-            {showDetails && (
-              <div className="mt-4 flex items-center gap-2">
-                <div className="flex flex-wrap gap-2">
-                  {p.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[10px] px-2 py-1 rounded-full border border-[rgba(var(--line),0.16)]
-                               text-[rgb(var(--muted))] uppercase tracking-[0.14em]"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Accent dot */}
-                <span className="ml-auto h-[7px] w-[7px] rounded-full bg-[rgb(var(--accent))]" />
-              </div>
-            )}
-          </div>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {p.tags.map((t) => (
+            <span
+              key={t}
+              className="text-[10px] uppercase tracking-widest px-2 py-1 border border-black/[0.1] dark:border-white/[0.2] text-gray-500"
+            >
+              {t}
+            </span>
+          ))}
         </div>
-
-        {/* Hover treatment: subtle (underline + border strength) */}
-        <div className="pointer-events-none absolute inset-0 rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-      </motion.article>
+      </div>
     </Link>
   );
 }
