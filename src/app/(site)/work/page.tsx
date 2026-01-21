@@ -1,75 +1,39 @@
 import Container from "@/components/Container";
 import ProjectGrid from "@/components/ProjectGrid";
-import ProjectPanel from "@/components/ProjectPanel";
 import { projects } from "@/content/projects";
 import { site } from "@/content/site";
 
 export default function WorkPage() {
   return (
     <Container>
-      <section className="py-14 md:py-16">
-        <div className="text-center">
-          <h1 className="font-[var(--font-serif)] text-[clamp(2.6rem,6vw,4.2rem)] leading-[0.92] tracking-[-0.02em]">
+      <section className="py-20 md:py-32">
+        {/* Editorial Header - Consistent with About */}
+        <div className="border-b border-black dark:border-white pb-10 mb-16 md:mb-24">
+          <h1 className="font-serif text-6xl md:text-8xl font-medium tracking-tight mb-6">
             Work
           </h1>
-
-          <p className="mt-4 text-sm md:text-base uppercase tracking-[0.18em] text-[rgb(var(--muted))]">
-            Selected projects · case studies · experiments
-          </p>
-
-          <p className="mt-4 mx-auto max-w-2xl text-sm text-[rgb(var(--muted))] leading-relaxed">
-            A curated set of projects that reflect how I build: clean architecture, careful UI, and
-            pragmatic engineering. Toggle <span className="uppercase tracking-[0.18em]">Text mode</span> in the header
-            to switch between “index view” and “cards view”.
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 text-sm uppercase tracking-[0.15em] font-medium opacity-70">
+            <span>Selected Projects</span>
+            <span>Case Studies · Experiments</span>
+          </div>
         </div>
-      </section>
 
-      <section className="pb-16">
-        <ProjectPanel>
-          <ProjectGrid projects={projects} />
-        </ProjectPanel>
-
-        <div className="mx-auto mt-10 max-w-5xl grid gap-6 md:grid-cols-3">
-          <div className="rounded-[18px] border border-[rgba(var(--line),0.14)] bg-black/[0.02] p-5">
-            <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-              Focus
-            </div>
-            <ul className="mt-4 space-y-2 text-sm text-[rgb(var(--muted))] leading-relaxed">
-              <li>• Systems thinking & reliability</li>
-              <li>• UX polish with minimal UI</li>
-              <li>• Data architecture foundations</li>
-            </ul>
-          </div>
-
-          <div className="rounded-[18px] border border-[rgba(var(--line),0.14)] bg-black/[0.02] p-5">
-            <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-              Tooling
-            </div>
-            <ul className="mt-4 space-y-2 text-sm text-[rgb(var(--muted))] leading-relaxed">
-              <li>• Next.js / Tailwind / Motion</li>
-              <li>• Python / SQL / Cloud</li>
-              <li>• C++ (when it matters)</li>
-            </ul>
-          </div>
-
-          <div className="rounded-[18px] border border-[rgba(var(--line),0.14)] bg-black/[0.02] p-5">
-            <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-              Resume
-            </div>
-            <p className="mt-4 text-sm text-[rgb(var(--muted))] leading-relaxed">
-              Want the full timeline and details?
+        {/* Intro Narrative */}
+        <div className="grid md:grid-cols-12 gap-12 mb-32 md:mb-40">
+          <div className="md:col-span-8 md:col-start-5 text-xl md:text-2xl leading-relaxed font-serif text-gray-800 dark:text-gray-200">
+            <p>
+              A curated set of projects that reflect how I build: <span className="italic">clean architecture</span>, <span className="italic">careful UI</span>, and <span className="font-bold">pragmatic engineering</span>.
             </p>
-            <a
-              href={site.resumeUrl}
-              download
-              className="mt-4 inline-flex items-center rounded-md border border-[rgba(var(--line),0.22)]
-                         px-4 py-2 text-xs uppercase tracking-[0.18em] hover:bg-black/5 transition"
-            >
-              Download CV
-            </a>
           </div>
         </div>
+
+        {/* Projects Grid - Removed Panel Wrapper for open layout */}
+        <div className="mb-40 md:mb-52">
+          <ProjectGrid projects={projects} />
+        </div>
+
+
+
       </section>
     </Container>
   );

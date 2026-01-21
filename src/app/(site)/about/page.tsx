@@ -4,76 +4,99 @@ import { site } from "@/content/site";
 export default function AboutPage() {
   return (
     <Container>
-      <section className="py-14 md:py-16">
-        <div className="text-center">
-          <h1 className="font-[var(--font-serif)] text-[clamp(2.6rem,6vw,4.2rem)] leading-[0.92] tracking-[-0.02em]">
+      <section className="py-20 md:py-32">
+        {/* Editorial Header */}
+        <div className="border-b border-black dark:border-white pb-10 mb-16 md:mb-24">
+          <h1 className="font-serif text-6xl md:text-8xl font-medium tracking-tight mb-6">
             About
           </h1>
-          <p className="mt-4 text-sm md:text-base uppercase tracking-[0.18em] text-[rgb(var(--muted))]">
-            {site.location}
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 text-sm uppercase tracking-[0.15em] font-medium opacity-70">
+            <span>{site.location}</span>
+            <span>Software · Data · Systems</span>
+          </div>
         </div>
 
-        <div className="mx-auto mt-10 max-w-5xl grid gap-10 md:grid-cols-12">
-          <div className="md:col-span-5">
-            <div className="rounded-[18px] border border-[rgba(var(--line),0.14)] bg-black/[0.02] p-6">
-              <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-                Snapshot
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+          {/* Left Column: Quick Signal */}
+          <div className="md:col-span-4 space-y-16">
 
-              <ul className="mt-4 space-y-2 text-sm text-[rgb(var(--muted))] leading-relaxed">
-                <li>• Background in software engineering</li>
-                <li>• Moving into data architecture</li>
-                <li>• Interested in performance, systems, and clean UI</li>
-                <li>• I like building things end-to-end</li>
+            {/* Snapshot */}
+            <div>
+              <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-6 opacity-40">Snapshot</h3>
+              <ul className="space-y-4 text-sm font-medium leading-relaxed opacity-80">
+                <li className="flex items-start gap-3">
+                  <span className="opacity-30">•</span> Background in software engineering
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="opacity-30">•</span> Moving into data architecture
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="opacity-30">•</span> Performance, systems, clean UI
+                </li>
               </ul>
             </div>
 
-            <div className="mt-6 rounded-[18px] border border-[rgba(var(--line),0.14)] bg-black/[0.02] p-6">
-              <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-                Principles
-              </div>
-              <ul className="mt-4 space-y-2 text-sm text-[rgb(var(--muted))] leading-relaxed">
-                <li>• Clarity & simplicity</li>
-                <li>• Measurable outcomes</li>
-                <li>• Documentation that survives</li>
+            {/* Principles */}
+            <div>
+              <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-6 opacity-40">Principles</h3>
+              <ul className="space-y-4 text-sm font-medium leading-relaxed opacity-80">
+                <li className="flex items-start gap-3">
+                  <span className="opacity-30">•</span> Clarity & simplicity
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="opacity-30">•</span> Measurable outcomes
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="opacity-30">•</span> Documentation that survives
+                </li>
               </ul>
             </div>
+
           </div>
 
-          <div className="md:col-span-7">
-            <div className="rounded-[18px] border border-[rgba(var(--line),0.14)] bg-[rgb(var(--bg))] p-6">
-              <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-                Story
-              </div>
+          {/* Right Column: Narrative */}
+          <div className="md:col-span-8">
+            <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">The Narrative</h3>
 
-              <div className="mt-4 space-y-4 text-sm text-[rgb(var(--muted))] leading-relaxed">
-                <p>
-                  I’m a software engineer transitioning into data architecture. I enjoy building systems
-                  that are reliable, understandable, and pleasantly designed.
-                </p>
-                <p>
-                  This site is a personal workspace: a curated list of projects, experiments, and case
-                  studies. The goal is not “more stuff”, but better signal.
-                </p>
-                <p>
-                  If you’re curious about collaboration, opportunities, or just want to chat — head to
-                  the Contact page.
-                </p>
+            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif text-gray-800 dark:text-gray-200">
+              <p>
+                I’m a software engineer transitioning into data architecture. I enjoy building systems
+                that are <span className="italic">reliable</span>, <span className="italic">understandable</span>, and pleasantly designed.
+              </p>
+              <p>
+                This site is a personal workspace: a curated list of projects, experiments, and case
+                studies. The goal is not "more stuff", but <span className="font-bold">better signal</span>.
+              </p>
+            </div>
+
+            <div className="mt-16 pt-16 border-t border-black/10 dark:border-white/10">
+              <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Optimizing For</h3>
+              <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 text-base font-medium opacity-80">
+                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                  <span>System Design</span>
+                  <span className="opacity-30">01</span>
+                </div>
+                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                  <span>Data Platforms</span>
+                  <span className="opacity-30">02</span>
+                </div>
+                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                  <span>Performance</span>
+                  <span className="opacity-30">03</span>
+                </div>
+                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                  <span>Product UX</span>
+                  <span className="opacity-30">04</span>
+                </div>
               </div>
             </div>
 
-            <div className="mt-6 rounded-[18px] border border-[rgba(var(--line),0.14)] bg-black/[0.02] p-6">
-              <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-                What I’m optimizing for
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2 text-sm text-[rgb(var(--muted))] leading-relaxed">
-                <div>• System design & architecture</div>
-                <div>• Data platforms & modeling</div>
-                <div>• Performance & reliability</div>
-                <div>• Product-quality UX</div>
-              </div>
+            <div className="mt-16">
+              <a href="/contact" className="inline-block border-b border-black dark:border-white pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold">
+                Let's Collaborate →
+              </a>
             </div>
+
           </div>
         </div>
       </section>
