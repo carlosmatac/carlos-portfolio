@@ -39,9 +39,9 @@ export default function ProjectCard({ p }: { p: CaseStudy }) {
   }
 
   return (
-    <Link href={`/work/${p.slug}`} className="group block mb-12">
+    <Link href={`/work/${p.slug}`} className="group block border border-gray-300 dark:border-gray-700 rounded-lg p-5 hover:border-black dark:hover:border-white transition-colors">
       {/* Image container */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-6">
+      <div className="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900 mb-5 rounded-md">
         {p.thumb ? (
           <Image
             src={p.thumb}
@@ -57,7 +57,7 @@ export default function ProjectCard({ p }: { p: CaseStudy }) {
 
       {/* Text Content */}
       <div className="flex flex-col gap-2">
-        <h3 className="font-serif text-3xl md:text-4xl uppercase leading-none tracking-tight group-hover:underline decoration-1 underline-offset-4">
+        <h3 className="font-serif text-2xl md:text-3xl uppercase leading-none tracking-tight group-hover:underline decoration-1 underline-offset-4">
           {p.title}
         </h3>
 
@@ -69,7 +69,7 @@ export default function ProjectCard({ p }: { p: CaseStudy }) {
           {p.tags.map((t) => (
             <span
               key={t}
-              className="text-[10px] uppercase tracking-widest px-2 py-1 border border-black/[0.1] dark:border-white/[0.2] text-gray-500"
+              className="text-[10px] uppercase tracking-widest px-2 py-1 border border-black/[0.1] dark:border-white/[0.2] text-gray-500 rounded"
             >
               {t}
             </span>
