@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="mt-10 flex justify-center gap-4">
           <Link
             href="/work"
-            className="px-6 py-3 text-[10px] md:text-xs uppercase tracking-[0.2em] bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors rounded-sm font-semibold"
+            className="px-6 py-3 text-[10px] md:text-xs uppercase tracking-[0.2em] border border-gray-200 dark:border-gray-800 hover:border-black dark:hover:border-white transition-colors rounded-sm font-semibold"
           >
             View Work
           </Link>
