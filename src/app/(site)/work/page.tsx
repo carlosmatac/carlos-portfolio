@@ -8,7 +8,7 @@ export default function WorkPage() {
     <Container>
       <section className="py-20 md:py-32">
         {/* Editorial Header - Consistent with About */}
-        <div className="border-b border-black dark:border-white pb-10 mb-16 md:mb-24">
+        <div className="border-b-[1px] border-solid border-black dark:border-white pb-10 mb-16 md:mb-24">
           <h1 className="font-serif text-6xl md:text-8xl font-medium tracking-tight mb-6">
             Work
           </h1>
@@ -20,7 +20,7 @@ export default function WorkPage() {
 
         {/* Intro Narrative */}
         <div className="grid md:grid-cols-12 gap-12 mb-32 md:mb-40">
-          <div className="md:col-span-8 md:col-start-5 text-xl md:text-2xl leading-relaxed font-serif text-gray-800 dark:text-gray-200">
+          <div className="md:col-span-8 md:col-start-5 text-xl md:text-2xl leading-relaxed font-serif text-black/80 dark:text-white/80">
             <p>
               A curated set of projects that reflect how I build: <span className="italic">clean architecture</span>, <span className="italic">careful UI</span>, and <span className="font-bold">pragmatic engineering</span>.
             </p>

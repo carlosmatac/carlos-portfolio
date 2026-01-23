@@ -1,60 +1,68 @@
 import Container from "@/components/Container";
 import { site } from "@/content/site";
 
-function ContactItem({ label, value, href }: { label: string; value: string; href: string }) {
-  return (
-    <a
-      href={href}
-      className="block rounded-[18px] border border-[rgba(var(--line),0.14)] bg-black/[0.02] p-6 hover:bg-black/[0.04] transition"
-    >
-      <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">{label}</div>
-      <div className="mt-3 font-[var(--font-serif)] text-xl tracking-tight">{value}</div>
-      <div className="mt-3 text-xs uppercase tracking-[0.18em] text-[rgb(var(--muted))]">Open →</div>
-    </a>
-  );
-}
-
 export default function ContactPage() {
-  const mailto = `mailto:${site.email}?subject=${encodeURIComponent("Hello Carlos")}&body=${encodeURIComponent(
-    "Hi Carlos,\n\nI came across your portfolio and…\n\n—"
-  )}`;
+  const mailto = `mailto:${site.email}`;
 
   return (
     <Container>
-      <section className="py-14 md:py-16">
-        <div className="text-center">
-          <h1 className="font-[var(--font-serif)] text-[clamp(2.6rem,6vw,4.2rem)] leading-[0.92] tracking-[-0.02em]">
+      <section className="py-20 md:py-32">
+        {/* Editorial Header */}
+        <div className="border-b border-black dark:border-white pb-10 mb-16 md:mb-24">
+          <h1 className="font-serif text-6xl md:text-8xl font-medium tracking-tight mb-6">
             Contact
           </h1>
-          <p className="mt-4 text-sm md:text-base uppercase tracking-[0.18em] text-[rgb(var(--muted))]">
-            Let’s talk — concise and to the point
-          </p>
-
-          <p className="mt-5 mx-auto max-w-2xl text-sm text-[rgb(var(--muted))] leading-relaxed">
-            Best channel is email. If you prefer, you can reach out on LinkedIn as well.
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 text-sm uppercase tracking-[0.15em] font-medium opacity-70">
+            <span>Let's Build Together</span>
+            <span>{site.email}</span>
+          </div>
         </div>
 
-        <div className="mx-auto mt-10 max-w-5xl grid gap-6 md:grid-cols-3">
-          <ContactItem label="Email" value={site.email} href={mailto} />
-          <ContactItem label="LinkedIn" value="Profile" href={site.links.linkedin} />
-          <ContactItem label="GitHub" value="Projects" href={site.links.github} />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+          {/* Left Column: Channels */}
+          <div className="md:col-span-4 space-y-12">
+            <div>
+              <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-6 opacity-40">Direct</h3>
+              <a href={mailto} className="block text-lg font-medium hover:opacity-50 transition-opacity">
+                {site.email}
+              </a>
+            </div>
 
-        <div className="mx-auto mt-10 max-w-5xl rounded-[18px] border border-[rgba(var(--line),0.14)] bg-[rgb(var(--bg))] p-6">
-          <div className="text-xs uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
-            Quick note template
+            <div>
+              <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-6 opacity-40">Socials</h3>
+              <div className="flex flex-col gap-4 text-sm font-medium opacity-80">
+                <a href={site.links.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:opacity-50 transition-opacity">
+                  LinkedIn ↗
+                </a>
+                <a href={site.links.github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:opacity-50 transition-opacity">
+                  GitHub ↗
+                </a>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-4 text-sm text-[rgb(var(--muted))] leading-relaxed">
-            <p className="mb-3">
-              If you want to make it easy for me:
-            </p>
-            <ul className="space-y-2">
-              <li>• Context: where you found me</li>
-              <li>• Goal: what you want to achieve</li>
-              <li>• Constraints: timeline / location / scope</li>
-            </ul>
+          {/* Right Column: Statement */}
+          <div className="md:col-span-8">
+            <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Get in Touch</h3>
+
+            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif text-gray-800 dark:text-gray-200">
+              <p>
+                The best way to reach me is via email. I’m always open to discussing <span className="italic">new opportunities</span>, <span className="italic">collaborations</span>, or just chatting about systems engineering.
+              </p>
+            </div>
+
+            <div className="mt-16 pt-16 border-t border-black/10 dark:border-white/10">
+              <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Pro Tip</h3>
+              <p className="text-base font-medium opacity-80 leading-relaxed max-w-lg mb-8">
+                If you want to make it easy for me, include context (where you found me), your goal, and any constraints (timeline/scope).
+              </p>
+              <a
+                href={mailto}
+                className="inline-block border-b border-black dark:border-white pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold"
+              >
+                Send Brief Email →
+              </a>
+            </div>
           </div>
         </div>
       </section>

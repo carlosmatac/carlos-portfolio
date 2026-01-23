@@ -6,7 +6,7 @@ export default function AboutPage() {
     <Container>
       <section className="py-20 md:py-32">
         {/* Editorial Header */}
-        <div className="border-b border-black dark:border-white pb-10 mb-16 md:mb-24">
+        <div className="border-b-[1px] border-solid border-black dark:border-white pb-10 mb-16 md:mb-24">
           <h1 className="font-serif text-6xl md:text-8xl font-medium tracking-tight mb-6">
             About
           </h1>
@@ -58,7 +58,7 @@ export default function AboutPage() {
           <div className="md:col-span-8">
             <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">The Narrative</h3>
 
-            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif text-gray-800 dark:text-gray-200">
+            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif text-black/80 dark:text-white/80">
               <p>
                 I’m a software engineer transitioning into data architecture. I enjoy building systems
                 that are <span className="italic">reliable</span>, <span className="italic">understandable</span>, and pleasantly designed.
