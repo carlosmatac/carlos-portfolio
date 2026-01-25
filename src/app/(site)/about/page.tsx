@@ -125,9 +125,12 @@ export default function AboutPage() {
           </div>
         </div>
 
+        {/* Divider */}
+        <div className="border-t border-[rgb(var(--line)/0.2)] my-16 md:my-24"></div>
+
         {/* Timeline Section */}
-        <div className="mb-24 md:mb-32">
-          <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Timeline</h3>
+        <div className="mb-16 md:mb-24">
+          <h2 className="font-serif text-2xl md:text-3xl font-medium mb-10 md:mb-12">Timeline</h2>
           <div className="grid md:grid-cols-2 gap-x-16 gap-y-8">
             {timeline.map((item, index) => (
               <div key={index} className="space-y-1">
@@ -142,9 +145,12 @@ export default function AboutPage() {
           </div>
         </div>
 
+        {/* Divider */}
+        <div className="border-t border-[rgb(var(--line)/0.2)] my-16 md:my-24"></div>
+
         {/* Certifications Section */}
-        <div className="mb-24 md:mb-32">
-          <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Certifications</h3>
+        <div className="mb-16 md:mb-24">
+          <h2 className="font-serif text-2xl md:text-3xl font-medium mb-10 md:mb-12">Certifications</h2>
           <div className="space-y-6">
             {certifications.map((cert, index) => (
               <div
