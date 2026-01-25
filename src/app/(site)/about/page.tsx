@@ -1,5 +1,7 @@
 import Container from "@/components/Container";
 import { site } from "@/content/site";
+import { timeline } from "@/content/timeline";
+import { certifications } from "@/content/certifications";
 
 export default function AboutPage() {
   return (
@@ -52,6 +54,35 @@ export default function AboutPage() {
               </ul>
             </div>
 
+            {/* Links */}
+            <div>
+              <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-6 opacity-40">Links</h3>
+              <div className="space-y-4 text-sm font-medium leading-relaxed opacity-80">
+                <a
+                  href={site.links.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 hover:opacity-50 transition-opacity"
+                >
+                  <span className="opacity-30">•</span> GitHub ↗
+                </a>
+                <a
+                  href={site.links.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 hover:opacity-50 transition-opacity"
+                >
+                  <span className="opacity-30">•</span> LinkedIn ↗
+                </a>
+                <a
+                  href={`mailto:${site.email}`}
+                  className="flex items-start gap-3 hover:opacity-50 transition-opacity"
+                >
+                  <span className="opacity-30">•</span> Email →
+                </a>
+              </div>
+            </div>
+
           </div>
 
           {/* Right Column: Narrative */}
@@ -76,29 +107,67 @@ export default function AboutPage() {
                   <span>System Design</span>
                   <span className="opacity-30">01</span>
                 </div>
-                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                <div className="flex justify-between border-b border-[rgb(var(--line)/0.1)] pb-2">
                   <span>Data Platforms</span>
                   <span className="opacity-30">02</span>
                 </div>
-                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                <div className="flex justify-between border-b border-[rgb(var(--line)/0.1)] pb-2">
                   <span>Performance</span>
                   <span className="opacity-30">03</span>
                 </div>
-                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                <div className="flex justify-between border-b border-[rgb(var(--line)/0.1)] pb-2">
                   <span>Product UX</span>
                   <span className="opacity-30">04</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-16">
-              <a href="/contact" className="inline-block border-b border-[rgb(var(--line))] pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold">
-                Let's Collaborate →
-              </a>
-            </div>
-
           </div>
         </div>
+
+        {/* Timeline Section */}
+        <div className="mb-24 md:mb-32">
+          <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Timeline</h3>
+          <div className="grid md:grid-cols-2 gap-x-16 gap-y-8">
+            {timeline.map((item, index) => (
+              <div key={index} className="space-y-1">
+                <div className="text-base font-medium opacity-80">
+                  {item.year} — {item.event}
+                </div>
+                <div className="text-sm opacity-60">
+                  {item.role}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Certifications Section */}
+        <div className="mb-24 md:mb-32">
+          <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Certifications</h3>
+          <div className="space-y-6">
+            {certifications.map((cert, index) => (
+              <div
+                key={index}
+                className="pb-6 border-b border-[rgb(var(--line)/0.1)] last:border-b-0"
+              >
+                <div className="flex items-baseline justify-between mb-1">
+                  <span className="text-base font-medium">{cert.name}</span>
+                  <span className="text-sm opacity-60">{cert.year}</span>
+                </div>
+                <div className="text-sm opacity-60">{cert.issuer}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="text-center">
+          <a href="/contact" className="inline-block border-b border-[rgb(var(--line))] pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold">
+            Let's Collaborate →
+          </a>
+        </div>
+
       </section>
     </Container>
   );
