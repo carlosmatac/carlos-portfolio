@@ -6,7 +6,7 @@ export default function AboutPage() {
     <Container>
       <section className="py-20 md:py-32">
         {/* Editorial Header */}
-        <div className="border-b-[1px] border-solid border-black dark:border-white pb-10 mb-16 md:mb-24">
+        <div className="border-b-[1px] border-solid border-[rgb(var(--line))] pb-10 mb-16 md:mb-24">
           <h1 className="font-serif text-6xl md:text-8xl font-medium tracking-tight mb-6">
             About
           </h1>
@@ -58,7 +58,7 @@ export default function AboutPage() {
           <div className="md:col-span-8">
             <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">The Narrative</h3>
 
-            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif text-black/80 dark:text-white/80">
+            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif">
               <p>
                 I’m a software engineer transitioning into data architecture. I enjoy building systems
                 that are <span className="italic">reliable</span>, <span className="italic">understandable</span>, and pleasantly designed.
@@ -69,10 +69,10 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="mt-16 pt-16 border-t border-black/10 dark:border-white/10">
+            <div className="mt-16 pt-16 border-t border-[rgb(var(--line)/0.1)]">
               <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Optimizing For</h3>
               <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 text-base font-medium opacity-80">
-                <div className="flex justify-between border-b border-black/10 dark:border-white/10 pb-2">
+                <div className="flex justify-between border-b border-[rgb(var(--line)/0.1)] pb-2">
                   <span>System Design</span>
                   <span className="opacity-30">01</span>
                 </div>
@@ -92,7 +92,7 @@ export default function AboutPage() {
             </div>
 
             <div className="mt-16">
-              <a href="/contact" className="inline-block border-b border-black dark:border-white pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold">
+              <a href="/contact" className="inline-block border-b border-[rgb(var(--line))] pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold">
                 Let's Collaborate →
               </a>
             </div>

@@ -8,7 +8,7 @@ export default function ContactPage() {
     <Container>
       <section className="py-20 md:py-32">
         {/* Editorial Header */}
-        <div className="border-b border-black dark:border-white pb-10 mb-16 md:mb-24">
+        <div className="border-b border-[rgb(var(--line))] pb-10 mb-16 md:mb-24">
           <h1 className="font-serif text-6xl md:text-8xl font-medium tracking-tight mb-6">
             Contact
           </h1>
@@ -45,20 +45,20 @@ export default function ContactPage() {
           <div className="md:col-span-8">
             <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Get in Touch</h3>
 
-            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif text-gray-800 dark:text-gray-200">
+            <div className="space-y-8 text-xl md:text-2xl leading-relaxed font-serif">
               <p>
                 The best way to reach me is via email. I’m always open to discussing <span className="italic">new opportunities</span>, <span className="italic">collaborations</span>, or just chatting about systems engineering.
               </p>
             </div>
 
-            <div className="mt-16 pt-16 border-t border-black/10 dark:border-white/10">
+            <div className="mt-16 pt-16 border-t border-[rgb(var(--line)/0.1)]">
               <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-8 opacity-40">Pro Tip</h3>
               <p className="text-base font-medium opacity-80 leading-relaxed max-w-lg mb-8">
                 If you want to make it easy for me, include context (where you found me), your goal, and any constraints (timeline/scope).
               </p>
               <a
                 href={mailto}
-                className="inline-block border-b border-black dark:border-white pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold"
+                className="inline-block border-b border-[rgb(var(--line))] pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold"
               >
                 Send Brief Email →
               </a>
