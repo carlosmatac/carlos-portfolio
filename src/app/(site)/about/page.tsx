@@ -1,4 +1,5 @@
 import Container from "@/components/Container";
+import Timeline from "@/components/Timeline";
 import { site } from "@/content/site";
 import { timeline } from "@/content/timeline";
 import { certifications } from "@/content/certifications";
@@ -130,19 +131,8 @@ export default function AboutPage() {
 
         {/* Timeline Section */}
         <div className="mb-16 md:mb-24">
-          <h2 className="font-serif text-2xl md:text-3xl font-medium mb-10 md:mb-12">Timeline</h2>
-          <div className="grid md:grid-cols-2 gap-x-16 gap-y-8">
-            {timeline.map((item, index) => (
-              <div key={index} className="space-y-1">
-                <div className="text-base font-medium opacity-80">
-                  {item.year} — {item.event}
-                </div>
-                <div className="text-sm opacity-60">
-                  {item.role}
-                </div>
-              </div>
-            ))}
-          </div>
+          <h2 className="font-serif text-2xl md:text-3xl font-medium mb-10 md:mb-16 text-center">Timeline</h2>
+          <Timeline items={timeline} />
         </div>
 
         {/* Divider */}

@@ -1,17 +1,12 @@
 export const certifications = [
     {
-        name: "AWS Solutions Architect Associate",
+        name: "Azure Databricks & Spark for Data Engineers",
+        issuer: "Microsoft Azure",
+        year: "2026",
+    },
+    {
+        name: "AWS Cloud Foundations Certificate",
         issuer: "Amazon Web Services",
-        year: "2023",
-    },
-    {
-        name: "Databricks Lakehouse Fundamentals",
-        issuer: "Databricks",
-        year: "2024",
-    },
-    {
-        name: "Azure Data Engineer Associate",
-        issuer: "Microsoft",
-        year: "2023",
+        year: "2026",
     },
 ];
