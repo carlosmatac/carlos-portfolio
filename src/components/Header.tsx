@@ -1,50 +1,148 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTextMode } from "@/components/TextModeProvider";
-import { useTheme } from "@/components/ThemeProvider";
+import { useActiveSection } from "@/hooks/useActiveSection";
+import { useSmoothScroll } from "@/hooks/useSmoothScroll";
+import { useMemo } from "react";
 
+const SECTION_IDS = ["hero", "work", "about", "contact"];
 
 export default function Header() {
   const { textMode, toggle: toggleTextMode } = useTextMode();
-  // Theme toggle can be hidden or integrated differently if we want strict adherence to the reference which seems to handle modes implicitly or via text mode. 
-  // For now, I'll keep it but maybe make it less obtrusive or part of the list if requested.
-  // The reference has "TEXT MODE" as a link-like item.
-  // I will make "Text Mode" look like a link.
+  const pathname = usePathname();
+  const activeSection = useActiveSection(SECTION_IDS);
+  const { scrollToSection, scrollToTop } = useSmoothScroll();
+
+  const isHome = pathname === "/";
+
+  // Determine active state for nav items
+  const getNavActiveState = useMemo(() => {
+    return (navItem: string) => {
+      if (isHome) {
+        // On home page, use intersection observer state
+        return activeSection === navItem;
+      } else {
+        // On other pages, match pathname
+        return pathname === `/${navItem}`;
+      }
+    };
+  }, [isHome, activeSection, pathname]);
+
+  const handleNavClick = (e: React.MouseEvent, sectionId: string) => {
+    if (isHome) {
+      e.preventDefault();
+      scrollToSection(sectionId);
+    }
+    // If not on home, let the Link component handle navigation normally
+  };
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (isHome) {
+      e.preventDefault();
+      scrollToTop();
+    }
+    // If not on home, let the Link navigate to /
+  };
 
   return (
-    <header className="border-b border-black/[0.08] dark:border-white/[0.08]">
+    <header className="sticky top-0 z-50 border-b border-[rgb(var(--line)/0.08)] bg-[rgb(var(--bg)/0.85)] backdrop-blur-md">
       <div className="mx-auto max-w-[1400px] px-6 md:px-12 py-6 flex items-center justify-between">
         {/* Left: Name */}
         <Link
           href="/"
-          className="text-sm font-bold tracking-widest uppercase text-black dark:text-white"
+          onClick={handleLogoClick}
+          className="text-sm font-bold tracking-widest uppercase transition-opacity hover:opacity-60"
         >
           Carlos Mata
         </Link>
 
         {/* Right: Nav */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium tracking-widest uppercase text-gray-500 dark:text-gray-400">
-          <Link href="/work" className="hover:text-black dark:hover:text-white transition-colors">
+        <nav className="hidden md:flex items-center gap-6 text-xs font-medium tracking-widest uppercase">
+          <NavLink
+            href={isHome ? "/#work" : "/work"}
+            isActive={getNavActiveState("work")}
+            onClick={(e) => handleNavClick(e, "work")}
+          >
             Work
-          </Link>
-          <Link href="/about" className="hover:text-black dark:hover:text-white transition-colors">
+          </NavLink>
+          <NavLink
+            href={isHome ? "/#about" : "/about"}
+            isActive={getNavActiveState("about")}
+            onClick={(e) => handleNavClick(e, "about")}
+          >
             About
-          </Link>
-          <Link href="/contact" className="hover:text-black dark:hover:text-white transition-colors">
+          </NavLink>
+          <NavLink
+            href={isHome ? "/#contact" : "/contact"}
+            isActive={getNavActiveState("contact")}
+            onClick={(e) => handleNavClick(e, "contact")}
+          >
             Contact
-          </Link>
+          </NavLink>
 
           <button
             onClick={toggleTextMode}
-            className="hover:text-black dark:hover:text-white transition-colors uppercase"
+            className="opacity-50 hover:opacity-100 transition-opacity uppercase"
           >
             Text Mode {textMode ? "On" : ""}
           </button>
         </nav>
 
-        {/* Mobile Menu Icon could go here, omitting for now to focus on desktop reference match */}
+        {/* Mobile Menu - Simple version */}
+        <nav className="md:hidden flex items-center gap-4 text-xs font-medium tracking-widest uppercase">
+          <NavLink
+            href={isHome ? "/#work" : "/work"}
+            isActive={getNavActiveState("work")}
+            onClick={(e) => handleNavClick(e, "work")}
+          >
+            Work
+          </NavLink>
+          <NavLink
+            href={isHome ? "/#about" : "/about"}
+            isActive={getNavActiveState("about")}
+            onClick={(e) => handleNavClick(e, "about")}
+          >
+            About
+          </NavLink>
+          <NavLink
+            href={isHome ? "/#contact" : "/contact"}
+            isActive={getNavActiveState("contact")}
+            onClick={(e) => handleNavClick(e, "contact")}
+          >
+            Contact
+          </NavLink>
+        </nav>
+      </div>
+
+      {/* Screen reader announcement for section changes */}
+      <div aria-live="polite" className="sr-only">
+        {activeSection && isHome && `Navigated to ${activeSection} section`}
       </div>
     </header>
+  );
+}
+
+// NavLink component with active state styling
+interface NavLinkProps {
+  href: string;
+  isActive: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+  children: React.ReactNode;
+}
+
+function NavLink({ href, isActive, onClick, children }: NavLinkProps) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`transition-opacity duration-300 ${isActive
+          ? "opacity-100 font-semibold"
+          : "opacity-50 hover:opacity-100"
+        }`}
+    >
+      {children}
+    </Link>
   );
 }
