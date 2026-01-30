@@ -10,7 +10,7 @@ export type CaseStudy = {
   // Case-study metadata
   year: string;
   role: string;
-  status?: "Concept" | "Prototype" | "Shipped";
+  status?: "Concept" | "Prototype" | "Shipped" | "MVP";
   duration?: string;
 
   // Content blocks
@@ -26,104 +26,148 @@ export type CaseStudy = {
 
 export const projects: CaseStudy[] = [
   {
-    slug: "project-aura",
-    title: "PROJECT AURA",
-    oneLiner: "Autonomous navigation system architecture",
-    tags: ["ROS2", "C++", "Qt"],
+    slug: "flysmart-spain",
+    title: "FlySmart Spain",
+    oneLiner: "Real-time flight aggregation platform",
+    tags: ["Java / Spring", "Python", "React", "Selenium"],
     thumb: "",
 
-    year: "2025",
-    role: "Systems / Software",
+    year: "2024",
+    role: "Lead Architect",
+    status: "Shipped",
+    duration: "4 months",
+
+    context:
+      "A specialized flight comparison engine for the Spanish market. Unlike generic aggregators, it focuses on domestic connectivity, integrating real-time data from official APIs and custom scrapers.",
+    problem: [
+      "Fragmented data sources: Airlines use different protocols and guard their data aggressively.",
+      "Latency requirements: Users expect search results in under 2 seconds, but scrapers are inherently slow.",
+      "Data consistency: Merging structured API responses with unstructured HTML scrapes is error-prone.",
+    ],
+    approach: [
+      "Designed a hybrid persistence layer: High-speed caching (Redis) for hot routes and persistent storage (MySQL) for historical trends.",
+      "implemented a distributed scraping architecture using Python/Selenium with autonomous error recovery.",
+      "Built a modern, responsive frontend in React that consumes a unified Spring Boot REST API.",
+    ],
+    outcome: [
+      "Successfully handles concurrent queries across multiple providers.",
+      "Normalized data schema allowing for future expansion into other transport modes.",
+      "Zero-downtime scraper deployment pipeline.",
+    ],
+    highlights: ["Distributed Scraping", "Hybrid Architecture", "Real-time Data"],
+    links: [
+      { label: "Frontend Repo", href: "https://github.com/FlySmartProject/FlySmartSpainFrontEnd" },
+      { label: "Backend Repo", href: "https://github.com/FlySmartProject/FlySmartSpainBackend" },
+    ],
+    gallery: [],
+  },
+
+  {
+    slug: "beersp",
+    title: "BeerSp",
+    oneLiner: "Social craft beer catalog & discovery",
+    tags: ["Spring Boot", "Kotlin", "React", "MySQL"],
+    thumb: "",
+
+    year: "2024",
+    role: "Full Stack Engineer",
+    status: "MVP",
+    duration: "3 months",
+
+    context:
+      "A community-driven platform for craft beer enthusiasts to catalog, rate, and discover local breweries. Built to focus on social interaction and reliable data structure.",
+    problem: [
+      "Need for relationships between Users, Beers, Breweries, and Reviews with strict integrity.",
+      "Scalability of the catalog as user-generated content grows.",
+      "Requirement for a clean, modile-first interface for on-the-go logging.",
+    ],
+    approach: [
+      "Architected a robust relational schema in MySQL ensuring referential integrity for complex join queries.",
+      "Developed a type-safe backend using Kotlin and Spring Boot, reducing boilerplate and runtime errors.",
+      "Created a React frontend with strict state management for a snappy user experience.",
+    ],
+    outcome: [
+      "Production-ready backend with comprehensive REST endpoints.",
+      "Seamless user flow from registration to reviewing.",
+      "Clean separation of concerns enabling easy feature additions.",
+    ],
+    highlights: ["Type-safe Backend", "Social Graph", "Product Design"],
+    links: [
+      { label: "Backend Repo", href: "https://github.com/BeerSpProject/BeerSp-Backend" },
+      { label: "Frontend Repo", href: "https://github.com/BeerSpProject/BeerSp-Frontend" },
+    ],
+    gallery: [],
+  },
+
+  {
+    slug: "embedded-stopwatch",
+    title: "Bare-metal Chrono",
+    oneLiner: "High-precision Arduino chronometer",
+    tags: ["C++", "Embedded", "Hardware", "Optimization"],
+    thumb: "",
+
+    year: "2023",
+    role: "Systems Engineer",
     status: "Prototype",
-    duration: "6–8 weeks",
+    duration: "2 weeks",
 
     context:
-      "A concept project exploring a clean architecture for autonomous mission execution, with a focus on reliability, observability, and operator UX.",
+      "A purely algorithmic implementation of a chronometer on limited hardware. The goal was to achieve maximum precision without relying on high-level abstraction libraries.",
     problem: [
-      "Complex mission logic becomes hard to test and reason about.",
-      "Systems need predictable performance and failure handling.",
-      "Operator tooling often lags behind the backend architecture.",
+      "Standard libraries introduce significant overhead and unpredictable latency.",
+      "Limited clock cycles available for updating display and handling user input concurrently.",
+      "Need for state-machine reliability to prevent 'ghost' inputs.",
     ],
     approach: [
-      "Defined a modular architecture (interfaces + small components) to isolate mission logic from transport details.",
-      "Outlined a telemetry and logging strategy designed for debugging under time pressure.",
-      "Designed a minimal UI to surface only the information that matters in operation.",
+      "Wrote raw C++ interacting directly with hardware registers for minimal latency.",
+      "Implemented interrupt-driven logic for high-precision timekeeping.",
+      "Designed a custom circular buffer for debounce logic to handle noisy physical buttons.",
     ],
     outcome: [
-      "A documented architecture with clear boundaries and extension points.",
-      "A prototype plan for metrics/telemetry that supports later production hardening.",
-      "A UI direction that matches the “editorial” style of this site (simple, readable, consistent).",
+      "achieved microsecond-level precision on standard Arduino hardware.",
+      "Zero 'blocking' code execution loop ensuring responsive UI.",
+      "Codebase demonstrating deep understanding of memory and processor constraints.",
     ],
-    highlights: ["Clean module boundaries", "Failure-aware design", "Operator-centric UI"],
-    links: [{ label: "Read more (placeholder)", href: "#" }],
+    highlights: ["Bare-metal C++", "Interrupts", "Memory Optimization"],
+    links: [
+      { label: "View Source", href: "https://github.com/carlosmatac/cronometro" },
+    ],
     gallery: [],
   },
 
   {
-    slug: "synapse-data",
-    title: "SYNAPSE DATA",
-    oneLiner: "Scalable real-time data platform",
-    tags: ["Python", "Kafka", "AWS"],
+    slug: "numbers-letters-solver",
+    title: "Algo Solver",
+    oneLiner: "Search space optimization engine",
+    tags: ["C++", "Algorithms", "Performance", "AI"],
     thumb: "",
 
-    year: "2026",
-    role: "Data Architecture",
-    status: "Concept",
-    duration: "Ongoing",
+    year: "2023",
+    role: "Algorithm Engineer",
+    status: "Shipped",
+    duration: "2 weeks",
 
     context:
-      "A placeholder case study to demonstrate how I would present a data platform project: ingestion, modeling, quality, and serving.",
+      "A computational engine designed to solve the 'Numbers and Letters' combinatorics puzzle. It navigates vast search spaces to find exact solutions in milliseconds.",
     problem: [
-      "Data arrives from multiple sources with inconsistent schemas.",
-      "Teams need trustworthy datasets without constant manual fixes.",
-      "Latency and cost must be controlled from day one.",
+      "The search space for combinations grows exponentially.",
+      "Brute force solutions are computationally too expensive for real-time use.",
+      "Need to prioritize 'natural' mathematical solutions over complex ones.",
     ],
     approach: [
-      "Defined contracts (schemas + versioning) and a simple governance model.",
-      "Designed a pipeline with clear stages: ingest → validate → transform → serve.",
-      "Added quality checks and observability as first-class requirements.",
+      "Implemented a Breadth-First Search (BFS) algorithm to guarantee finding the shortest solution path.",
+      "Optimized data structures to minimize memory tracking of visited states.",
+      "Applied pruning heuristics to discard non-viable branches early.",
     ],
     outcome: [
-      "A clear blueprint for a production-ready platform.",
-      "A structure that scales with more sources and more consumers.",
-      "A portfolio-ready narrative that communicates decisions, not buzzwords.",
+      "Solves complex permutation problems in under 10ms.",
+      "Clean, modular C++ implementation of standard graph algorithms.",
+      "Demonstrable efficiency improvement over recursive brute-force methods.",
     ],
-    highlights: ["Schema discipline", "Quality gates", "Cost-aware design"],
-    links: [{ label: "Architecture notes (placeholder)", href: "#" }],
-    gallery: [],
-  },
-
-  {
-    slug: "quantum-edge",
-    title: "QUANTUM EDGE",
-    oneLiner: "High-frequency trading interface",
-    tags: ["C++", "Linux", "UI/UX"],
-    thumb: "",
-
-    year: "2025",
-    role: "Frontend / Systems",
-    status: "Concept",
-    duration: "2–3 weeks",
-
-    context:
-      "A placeholder concept for a performance-sensitive interface. The intent is to show how I think about UX under constraints.",
-    problem: [
-      "Operators need fast, stable UI feedback under load.",
-      "Too much data creates noise and slows decision-making.",
-      "Systems must remain predictable as complexity grows.",
+    highlights: ["Graph Theory", "BFS", "Search Optimization"],
+    links: [
+      { label: "View Source", href: "https://github.com/carlosmatac/numbers-letters-v3" },
     ],
-    approach: [
-      "Designed a UI that prioritizes hierarchy, legibility, and shortcuts over decoration.",
-      "Outlined performance constraints and a rendering strategy.",
-      "Created a simple component system to keep the UI consistent.",
-    ],
-    outcome: [
-      "A spec-like case study with UX decisions and performance considerations.",
-      "A reusable design pattern library (minimal components, clear spacing).",
-      "A format that can be reused for real projects later.",
-    ],
-    highlights: ["UX under constraints", "Performance-first mindset", "Minimal component system"],
-    links: [{ label: "Spec draft (placeholder)", href: "#" }],
     gallery: [],
   },
 ];
