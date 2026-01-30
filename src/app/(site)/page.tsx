@@ -59,13 +59,17 @@ export default function HomePage() {
               >
                 View Work
               </Link>
-              <a
-                href="/CarlosMata-Resume.pdf"
-                download
+              <Link
+                href="/#contact"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+                  window.history.pushState({}, "", "/#contact");
+                }}
                 className="px-6 py-3 text-[10px] md:text-xs uppercase tracking-[0.2em] border border-[rgb(var(--line)/0.2)] hover:border-[rgb(var(--line))] transition-colors rounded-sm font-semibold"
               >
-                Download CV
-              </a>
+                Contact
+              </Link>
             </div>
           </div>
         </Container>
