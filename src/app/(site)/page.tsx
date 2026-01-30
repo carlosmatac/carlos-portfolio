@@ -38,11 +38,11 @@ export default function HomePage() {
             {/* Subtitles Grid - Inherits color from body (var(--fg)) for perfect contrast */}
             <div className="flex flex-col md:flex-row justify-center items-center md:items-start gap-4 md:gap-12 uppercase tracking-[0.15em] text-xs md:text-sm font-medium opacity-90">
               <div className="flex flex-col items-center md:items-end text-center md:text-right">
-                <span>Software Engineer <span className="mx-2">→</span> Data Architect</span>
+                <span>Software <span className="mx-2">&</span> Data Engineering</span>
               </div>
               <div className="hidden md:block w-px h-8 bg-current opacity-40"></div>
               <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                <span>C++ / ROS2 / QT · Data Platforms · Madrid</span>
+                <span>C++ / Python  · Data Platforms · Madrid</span>
               </div>
             </div>
 

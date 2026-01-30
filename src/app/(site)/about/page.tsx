@@ -31,7 +31,7 @@ export default function AboutPage() {
                   <span className="opacity-30">•</span> Background in software engineering
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="opacity-30">•</span> Moving into data architecture
+                  <span className="opacity-30">•</span> Learning about data engineering
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="opacity-30">•</span> Performance, systems, clean UI
