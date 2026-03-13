@@ -1,82 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useTextMode } from "@/components/TextModeProvider";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
-import { useMemo } from "react";
+
+import Image from "next/image";
 
 const SECTION_IDS = ["hero", "work", "about", "contact"];
 
 export default function Header() {
   const { textMode, toggle: toggleTextMode } = useTextMode();
-  const pathname = usePathname();
   const activeSection = useActiveSection(SECTION_IDS);
   const { scrollToSection, scrollToTop } = useSmoothScroll();
 
-  const isHome = pathname === "/";
-
-  // Determine active state for nav items
-  const getNavActiveState = useMemo(() => {
-    return (navItem: string) => {
-      if (isHome) {
-        // On home page, use intersection observer state
-        return activeSection === navItem;
-      } else {
-        // On other pages, match pathname
-        return pathname === `/${navItem}`;
-      }
-    };
-  }, [isHome, activeSection, pathname]);
-
   const handleNavClick = (e: React.MouseEvent, sectionId: string) => {
-    if (isHome) {
-      e.preventDefault();
-      scrollToSection(sectionId);
-    }
-    // If not on home, let the Link component handle navigation normally
+    e.preventDefault();
+    scrollToSection(sectionId);
   };
 
   const handleLogoClick = (e: React.MouseEvent) => {
-    if (isHome) {
-      e.preventDefault();
-      scrollToTop();
-    }
-    // If not on home, let the Link navigate to /
+    e.preventDefault();
+    scrollToTop();
   };
 
   return (
     <header className="sticky top-0 z-50 border-b border-[rgb(var(--line)/0.08)] bg-[rgb(var(--bg)/0.85)] backdrop-blur-md">
       <div className="mx-auto max-w-[1400px] px-6 md:px-12 py-6 flex items-center justify-between">
-        {/* Left: Name */}
+        {/* Left: Logo */}
         <Link
           href="/"
           onClick={handleLogoClick}
-          className="text-sm font-bold tracking-widest uppercase transition-opacity hover:opacity-60"
+          className="transition-opacity hover:opacity-60 flex items-center"
         >
-          Carlos Mata
+          <Image
+            src="/carlos_logo.svg"
+            alt="Carlos Mata Logo"
+            width={32}
+            height={32}
+            className="w-8 h-8 md:w-10 md:h-10 dark:invert"
+          />
         </Link>
 
-        {/* Right: Nav */}
+        {/* Right: Nav — Desktop */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-medium tracking-widest uppercase">
           <NavLink
-            href={isHome ? "/#work" : "/work"}
-            isActive={getNavActiveState("work")}
+            href="/#work"
+            isActive={activeSection === "work"}
             onClick={(e) => handleNavClick(e, "work")}
           >
             Work
           </NavLink>
           <NavLink
-            href={isHome ? "/#about" : "/about"}
-            isActive={getNavActiveState("about")}
+            href="/#about"
+            isActive={activeSection === "about"}
             onClick={(e) => handleNavClick(e, "about")}
           >
             About
           </NavLink>
           <NavLink
-            href={isHome ? "/#contact" : "/contact"}
-            isActive={getNavActiveState("contact")}
+            href="/#contact"
+            isActive={activeSection === "contact"}
             onClick={(e) => handleNavClick(e, "contact")}
           >
             Contact
@@ -90,25 +74,25 @@ export default function Header() {
           </button>
         </nav>
 
-        {/* Mobile Menu - Simple version */}
+        {/* Mobile Nav */}
         <nav className="md:hidden flex items-center gap-4 text-xs font-medium tracking-widest uppercase">
           <NavLink
-            href={isHome ? "/#work" : "/work"}
-            isActive={getNavActiveState("work")}
+            href="/#work"
+            isActive={activeSection === "work"}
             onClick={(e) => handleNavClick(e, "work")}
           >
             Work
           </NavLink>
           <NavLink
-            href={isHome ? "/#about" : "/about"}
-            isActive={getNavActiveState("about")}
+            href="/#about"
+            isActive={activeSection === "about"}
             onClick={(e) => handleNavClick(e, "about")}
           >
             About
           </NavLink>
           <NavLink
-            href={isHome ? "/#contact" : "/contact"}
-            isActive={getNavActiveState("contact")}
+            href="/#contact"
+            isActive={activeSection === "contact"}
             onClick={(e) => handleNavClick(e, "contact")}
           >
             Contact
@@ -116,15 +100,14 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* Screen reader announcement for section changes */}
+      {/* Screen reader announcement */}
       <div aria-live="polite" className="sr-only">
-        {activeSection && isHome && `Navigated to ${activeSection} section`}
+        {activeSection && `Navigated to ${activeSection} section`}
       </div>
     </header>
   );
 }
 
-// NavLink component with active state styling
 interface NavLinkProps {
   href: string;
   isActive: boolean;
@@ -137,9 +120,7 @@ function NavLink({ href, isActive, onClick, children }: NavLinkProps) {
     <Link
       href={href}
       onClick={onClick}
-      className={`transition-opacity duration-300 ${isActive
-          ? "opacity-100 font-semibold"
-          : "opacity-50 hover:opacity-100"
+      className={`transition-opacity duration-300 ${isActive ? "opacity-100 font-semibold" : "opacity-50 hover:opacity-100"
         }`}
     >
       {children}

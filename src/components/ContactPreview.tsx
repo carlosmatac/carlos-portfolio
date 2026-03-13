@@ -103,15 +103,6 @@ export default function ContactPreview() {
                 </motion.div>
             </div>
 
-            {/* Additional CTA to full page */}
-            <div className="mt-16 pt-8 border-t border-[rgb(var(--line)/0.1)] text-center">
-                <Link
-                    href="/contact"
-                    className="inline-block hover:opacity-50 transition-opacity uppercase tracking-widest text-xs font-medium opacity-60"
-                >
-                    View Full Contact Page →
-                </Link>
-            </div>
         </div>
     );
 }

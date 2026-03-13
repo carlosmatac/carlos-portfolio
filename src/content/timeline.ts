@@ -1,6 +1,11 @@
 export const timeline = [
     {
-        year: "2024—2026",
+        year: "Mar 2026—Present",
+        event: "Data Architect, Nfq",
+        role: "Present",
+    },
+    {
+        year: "2024—Feb 2026",
         event: "Software Engineer, HAT.tec",
         role: "Munich, Germany",
     },

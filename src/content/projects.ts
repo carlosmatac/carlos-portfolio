@@ -26,8 +26,81 @@ export type CaseStudy = {
 
 export const projects: CaseStudy[] = [
   {
+    slug: "retail-analytics-platform",
+    title: "Retail Analytics Data Platform",
+    oneLiner: "Scalable data platform for retail intelligence",
+    tags: ["dbt", "Snowflake", "SQL", "Python"],
+    thumb: "",
+
+    year: "2026",
+    role: "Data Architect",
+    status: "Shipped",
+    duration: "Ongoing",
+
+    context:
+      "Design and implementation of an analytics platform for the retail sector. The project focuses on scalable data ingestion, transformation and modelling, creating optimised data marts for business intelligence and reporting.",
+    problem: [
+      "Disparate data sources across multiple retail systems with no unified layer.",
+      "Raw data not suited for BI tools without heavy preprocessing.",
+      "No versioned, testable transformation logic in place.",
+    ],
+    approach: [
+      "Modelled data using dbt with staging, intermediate and mart layers following best practices.",
+      "Leveraged Snowflake's warehousing capabilities for scalable compute and storage separation.",
+      "Wrote Python scripts for initial data ingestion and orchestration.",
+    ],
+    outcome: [
+      "Reusable data marts powering dashboards and ad-hoc reporting.",
+      "Fully tested and documented dbt models with CI checks.",
+      "Significant reduction in time-to-insight for business stakeholders.",
+    ],
+    highlights: ["dbt", "Data Modelling", "Snowflake"],
+    links: [
+      { label: "GitHub Repo", href: "https://github.com/carlosmatac/dbt-snowflake-retail-analytics" },
+    ],
+    gallery: [],
+  },
+
+  {
+    slug: "energy-market-integrator",
+    title: "Energy Market Integrator",
+    oneLiner: "Automated data integration for electricity market APIs",
+    tags: ["Python", "Pandas", "REST APIs", "PostgreSQL", "Docker", "Grafana"],
+    thumb: "",
+
+    year: "2025",
+    role: "Data Engineer",
+    status: "Shipped",
+    duration: "3 months",
+
+    context:
+      "Automated data integration system for the energy market. Extracts, cleans and consolidates complex data from multiple sources (electricity market APIs) for subsequent analysis and centralised storage.",
+    problem: [
+      "Electricity market APIs return inconsistent formats and vary by provider.",
+      "Manual data consolidation was error-prone and time-consuming.",
+      "No operational visibility into pipeline health or data freshness.",
+    ],
+    approach: [
+      "Built a modular Python ETL pipeline with Pandas for transformation and normalisation.",
+      "Containerised the entire stack with Docker for reproducibility.",
+      "Connected PostgreSQL as the central store and Grafana for pipeline monitoring.",
+    ],
+    outcome: [
+      "Fully automated daily ingestion from multiple market APIs.",
+      "Operational dashboards in Grafana showing data freshness and pipeline KPIs.",
+      "Clean, queryable dataset ready for downstream analytics.",
+    ],
+    highlights: ["ETL Pipeline", "Containerised", "Market Data"],
+    links: [
+      { label: "GitHub Repo", href: "https://github.com/carlosmatac/energy-market-integrator" },
+    ],
+    gallery: [],
+  },
+
+  {
     slug: "flysmart-spain",
     title: "FlySmart Spain",
+
     oneLiner: "Real-time flight aggregation platform",
     tags: ["Java / Spring", "Python", "React", "Selenium"],
     thumb: "",

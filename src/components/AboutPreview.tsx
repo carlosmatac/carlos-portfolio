@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { timeline } from "@/content/timeline";
 
 export default function AboutPreview() {
     const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -24,7 +24,7 @@ export default function AboutPreview() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 mb-20 md:mb-28">
                 {/* Left Column: Snapshot */}
                 <motion.div
                     className="md:col-span-4"
@@ -45,7 +45,7 @@ export default function AboutPreview() {
                             <span className="opacity-30">•</span> Background in software engineering
                         </li>
                         <li className="flex items-start gap-3">
-                            <span className="opacity-30">•</span>  Learning about data engineering
+                            <span className="opacity-30">•</span> Transitioning into data architecture
                         </li>
                         <li className="flex items-start gap-3">
                             <span className="opacity-30">•</span> Performance, systems, clean UI
@@ -81,14 +81,42 @@ export default function AboutPreview() {
                 </motion.div>
             </div>
 
-            {/* CTA */}
-            <div className="mt-16 text-center">
-                <Link
-                    href="/about"
-                    className="inline-block border-b border-[rgb(var(--line))] pb-1 hover:opacity-50 transition-opacity uppercase tracking-widest text-sm font-bold"
-                >
-                    Read Full Story →
-                </Link>
+            {/* Experience Timeline */}
+            <div className="border-t border-[rgb(var(--line)/0.1)] pt-12 md:pt-16">
+                <h3 className="text-xs uppercase tracking-[0.2em] font-bold mb-10 opacity-40">
+                    Experience
+                </h3>
+                <div className="flex flex-col">
+                    {timeline.map((item, index) => (
+                        <motion.div
+                            key={index}
+                            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 8 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-30px" }}
+                            transition={{
+                                duration: prefersReducedMotion ? 0 : 0.45,
+                                delay: prefersReducedMotion ? 0 : index * 0.07,
+                                ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className={`flex flex-col md:flex-row md:items-baseline gap-2 md:gap-10 py-5 border-t border-[rgb(var(--line)/0.08)] first:border-t-0 ${index === 0 ? "opacity-100" : "opacity-60 hover:opacity-100"} transition-opacity duration-300`}
+                        >
+                            <span className="w-36 shrink-0 text-[10px] uppercase tracking-[0.2em] font-medium opacity-50">
+                                {item.year}
+                            </span>
+                            <div className="flex flex-col gap-0.5">
+                                <span className={`text-sm font-semibold tracking-wide ${index === 0 ? "" : ""}`}>
+                                    {item.event}
+                                    {index === 0 && (
+                                        <span className="ml-2 text-[9px] uppercase tracking-widest text-[rgb(var(--accent))] border border-[rgb(var(--accent)/0.4)] px-1.5 py-0.5 rounded-sm align-middle">
+                                            Current
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="text-xs opacity-50">{item.role}</span>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
             </div>
         </div>
     );
