@@ -1,8 +1,8 @@
 export const site = {
   name: "Carlos Mata",
   location: "Madrid, ES",
-  headlineTop: "Software Engineer",
-  headlineBottom: "C++ / ROS2 / Qt · Data Platforms · Madrid",
+  headlineTop: "Software & Data Engineer",
+  headlineBottom: "Databricks / dbt / Snowflake · Node.js / React / Supabase · Madrid",
 
   email: "caarlosmatac@gmail.com",
 

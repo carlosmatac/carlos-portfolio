@@ -1,5 +1,11 @@
 export const timeline = [
     {
+        year: "Feb 2026—Present",
+        event: "Co-founder, Aksum",
+        role: "Internal knowledge platform",
+        href: "https://www.aksum.ai/",
+    },
+    {
         year: "Mar 2026—Present",
         event: "Data Architect, Nfq",
         role: "Present",

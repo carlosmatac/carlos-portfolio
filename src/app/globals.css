@@ -1,19 +1,20 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------
+   Portfolio v2 — negro + acento lima. Un solo tema, sin modo claro.
+   --------------------------------------------------------------- */
+
 :root {
-  --bg: 250 248 242;
-  --fg: 0 0 0;
-  --muted: 100 100 100;
-  --line: 0 0 0;
-  --accent: 60 200 120;
+  --bg: 8 8 10;
+  --fg: 237 237 232;
+  --accent: 217 255 0;
+  --line: 237 237 232;
+  --header-h: 72px;
 }
 
-.dark {
-  --bg: 18 18 18;
-  --fg: 255 255 255;
-  --muted: 160 160 160;
-  --line: 255 255 255;
-  --accent: 60 200 120;
+@theme inline {
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 html {
@@ -21,12 +22,109 @@ html {
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
+  background: rgb(var(--bg));
 }
 
-/* Respect reduced motion preference */
+/* El fondo lo pinta <html>: el canvas del campo de puntos vive detrás del
+   contenido (-z-10) y un fondo en <body> lo taparía por completo. */
+body {
+  background: transparent;
+  color: rgb(var(--fg));
+  font-family: var(--font-sans);
+}
+
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+::selection {
+  background: rgb(var(--accent));
+  color: rgb(var(--bg));
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 3px;
+}
+
+/* Deja sitio a la cabecera fija al saltar a una sección */
+section[id] {
+  scroll-margin-top: calc(var(--header-h) + 16px);
+}
+
+/* Cursor de bloque del hero */
+.caret {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.62em;
+  margin-left: 0.08em;
+  transform: translateY(0.02em);
+  background: rgb(var(--accent));
+  animation: caret-blink 1.4s steps(1, end) infinite;
+}
+
+@keyframes caret-blink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0.12;
+  }
+}
+
+/* Filas de Work: el detalle se abre al pasar el cursor o al enfocar con teclado */
+.work-item .work-detail {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 220ms ease, opacity 220ms ease, margin-top 220ms ease;
+}
+
+.work-item:hover .work-detail,
+.work-item:focus-within .work-detail {
+  max-height: 320px;
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+.work-item:hover .work-title,
+.work-item:focus-within .work-title {
+  color: rgb(var(--accent));
+}
+
+.work-item:hover .work-go,
+.work-item:focus-within .work-go {
+  color: rgb(var(--accent));
+  opacity: 1;
+}
+
+/* Sin cursor no hay hover: en táctil el detalle va siempre abierto, para que
+   los tags y los enlaces al repo no queden inalcanzables. */
+@media (hover: none) {
+  .work-item .work-detail {
+    max-height: none;
+    opacity: 1;
+    margin-top: 1rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .caret {
+    animation: none;
   }
 
   *,
@@ -38,28 +136,6 @@ html {
   }
 }
 
-body {
-  background: rgb(var(--bg));
-  color: rgb(var(--fg));
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  font: inherit;
-  color: inherit;
-}
-
-/* Section scroll margin for sticky header */
-section[id] {
-  scroll-margin-top: 80px;
-}
-
-/* Screen reader only utility */
 .sr-only {
   position: absolute;
   width: 1px;

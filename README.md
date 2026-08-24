@@ -1,82 +1,82 @@
-## Carlos Mata – Portfolio (Provisional README)
+## Carlos Mata — Portfolio
 
-This repository contains the personal portfolio of **Carlos Mata**, a **Software Engineer** with experience in **C++ / ROS2 / Qt**, data platforms and **Linux** environments.
+Personal portfolio of **Carlos Mata**, a software engineer moving into data
+architecture (C++, Python, data platforms), based in Madrid.
 
-### Main technologies
+The site is a **single page** on a black canvas: the name at brutal scale over a
+dot field that reacts to the cursor, and exactly two destinations — **About** and
+**Work** — reached by smooth scroll. No cards, no thumbnails, no case-study
+pages: every project row links straight to its repository.
 
-- **Framework**: Next.js 16 (App Router, `src/app` directory)
-- **Libraries**: React 19, React DOM 19
-- **Styling**: Tailwind CSS 4
-- **Animations**: Framer Motion
+### Stack
+
+- **Framework**: Next.js 16 (App Router, `src/app`)
+- **Libraries**: React 19
+- **Styling**: Tailwind CSS 4 (CSS-first, tokens in `src/app/globals.css`)
+- **Typeface**: Geist, self-hosted via the `geist` package (no runtime font fetch)
 - **Language**: TypeScript
+- **Tests**: Vitest + Testing Library
 
-### Overall structure
+### Design system
 
-- `src/app/layout.tsx`: root layout, font setup (`Inter`, `Playfair Display`) and basic metadata.
-- `src/app/(site)/layout.tsx`: main site layout; wraps the content with `Header` and `TextModeProvider`.
-- `src/app/(site)/page.tsx`: home page with hero (name, role, stack, location), CTA to **Work**, CV download (`/cv.pdf`) and project panel.
-- `src/app/(site)/about/page.tsx`: **About** page (content to be refined/completed).
-- `src/app/(site)/work/page.tsx`: **Work** page (currently a placeholder: “Coming next: case studies”, planned for detailed case studies).
-- `src/app/(site)/contact/page.tsx`: **Contact** page (also a placeholder for now).
-- `src/components/Header.tsx`: header with navigation (`Work`, `About`, `Contact`) and a button to toggle text mode.
-- `src/components/TextModeProvider.tsx`: global context that manages **text mode** (a more editorial/table-like view), persisted in `localStorage`.
-- `src/components/ProjectGrid.tsx`: project grid; switches between:
-  - visual card view (`ProjectCard`) and
-  - editorial index-style rows (`ProjectRow`),
-  depending on `textMode`.
-- `src/content/projects.ts`: typed data source (`CaseStudy[]`) with detailed case studies like `PROJECT AURA`, `SYNAPSE DATA` and `QUANTUM EDGE`, including `slug`, description, tags, context, problem, approach, outcome, and metadata (year, role, status, duration).
+Defined as CSS variables in `src/app/globals.css`:
 
-### Key portfolio features
+| Token      | Value                      |
+| ---------- | -------------------------- |
+| `--bg`     | `#08080A` (near-black)     |
+| `--fg`     | `#EDEDE8` (off-white)      |
+| `--accent` | `#D9FF00` (acid lime)      |
 
-- **Clear hero**: full name, role (`Software Engineer`), main tech stack and location (Madrid).
-- **Project listing**:
-  - Animated cards with Framer Motion (`ProjectCard`) linked to anchors in `Work` (`/work#slug`).
-  - Alternative text mode view (`ProjectRow`) with numbering, short description and tags on the right.
-- **Persistent text mode**:
-  - “Text mode ON/OFF” button in the header.
-  - State stored in `localStorage` (`cm:textMode`) and restored on reload.
-- **Editorial / monochrome design**:
-  - Serif typography for headings and sans for body text.
-  - Greyscale palette controlled via CSS variables (`--bg`, `--muted`, `--line`, `--accent`).
+One theme only — there is no light mode. Pills are the only rounded shape; no
+shadows, no card backgrounds.
 
-### Local installation and usage
+### Structure
 
-1. **Install dependencies**
+- `src/app/layout.tsx` — root layout, Geist wiring, metadata.
+- `src/app/(site)/layout.tsx` — mounts `BackgroundField` and `Header` around the page.
+- `src/app/(site)/page.tsx` — the whole site: `Hero`, `AboutSection`, `WorkSection`.
+- `src/components/BackgroundField.tsx` — the reactive background. A fixed
+  `<canvas>` holding a lattice of dots that are pushed away from the pointer
+  within a radius and ease back; dots inside the radius light up in the accent.
+  With no pointer the focus follows a slow orbit. Honours
+  `prefers-reduced-motion` by painting a single static frame and registering no
+  listeners.
+- `src/components/Header.tsx` — fixed header. Absent over the hero; slides in
+  past the first viewport and marks the active section in accent.
+- `src/components/Hero.tsx` — name, tagline and the two buttons.
+- `src/components/AboutSection.tsx` — bio, "now" card, links, timeline, certifications.
+- `src/components/WorkSection.tsx` — typographic index of projects. Hovering (or
+  focusing) a row opens its one-liner, stack and repo buttons; on touch devices
+  the detail is always open.
+- `src/hooks/useActiveSection.ts` / `useSmoothScroll.ts` — section tracking and
+  scrolling for the single-page navigation.
+- `src/content/` — the data: `projects.ts`, `timeline.ts`, `certifications.ts`, `site.ts`.
+
+The old `/about`, `/work`, `/work/[slug]` and `/contact` routes are kept as
+redirects into the corresponding section, so existing links do not 404.
+
+### Local usage
 
 ```bash
 npm install
+npm run dev     # http://localhost:3000
 ```
 
-2. **Start the development server**
+### Scripts
 
-```bash
-npm run dev
-```
-
-3. **Open in the browser**
-
-Go to `http://localhost:3000`.
-
-### Available scripts
-
-- **`npm run dev`**: starts the Next.js development server.
-- **`npm run build`**: creates the production build.
-- **`npm run start`**: runs the server with the existing production build.
-- **`npm run lint`**: runs ESLint using the Next.js config.
+- **`npm run dev`** — development server.
+- **`npm run build`** — production build.
+- **`npm run start`** — serve the production build.
+- **`npm run lint`** — ESLint with the Next.js config.
+- **`npm test`** — Vitest.
 
 ### Deployment
 
-The project is ready to be deployed on any Next.js-compatible platform (for example Vercel).  
-In production, use:
+Any Next.js-compatible platform (currently Vercel): `npm run build`, then
+`npm run start`.
 
-- `npm run build` to generate the production artifacts.
-- `npm run start` to serve the application.
+### Ideas for evolution
 
-### Next steps (ideas for evolution)
-
-- Fill in content on the `About`, `Work` (with detailed case studies) and `Contact` pages.
-- Add per-project detail pages (`/work/[slug]`) reusing data from `src/content/projects.ts`.
-- Add real thumbnails under `thumbs/` and populate the `thumb` field for each project.
-- Improve SEO (per-route metadata, Open Graph, etc.) and accessibility (labels, focus handling, contrast).
-
-> This README is **provisional** and intended as a technical and functional overview of the portfolio. The tone (more personal vs. more corporate) can be adjusted depending on how you want to present your work.
+- Per-project screenshots as an optional right-hand column in the Work index.
+- Per-section Open Graph images.
+- Revisit the dot field's cost on low-end mobile devices.

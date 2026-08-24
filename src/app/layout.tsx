@@ -1,26 +1,26 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
-
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const serif = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-  variable: "--font-serif"
-});
+import { GeistSans } from "geist/font/sans";
+import { site } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Carlos Mata",
-  description: "Software Engineer",
+  title: "Carlos Mata — Software & Data Engineering",
+  description:
+    "Software & Data Engineer. Databricks, dbt and Snowflake at work; Node.js, React and Supabase on personal projects. Based in Madrid.",
   icons: {
     icon: "/carlos_logo.svg",
+  },
+  openGraph: {
+    title: site.name,
+    description: "Software & Data Engineer.",
+    type: "website",
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-      <body className="font-[var(--font-sans)]">{children}</body>
+    <html lang="en" className={GeistSans.variable}>
+      <body>{children}</body>
     </html>
   );
 }

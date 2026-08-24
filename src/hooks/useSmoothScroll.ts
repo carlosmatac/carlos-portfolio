@@ -1,41 +1,20 @@
 "use client";
 
 import { useCallback } from "react";
-import { usePathname, useRouter } from "next/navigation";
 
+/** Scroll suave entre las secciones de la única página del sitio. */
 export function useSmoothScroll() {
-    const pathname = usePathname();
-    const router = useRouter();
-
-    const scrollToSection = useCallback(
-        (sectionId: string) => {
-            // If we're on the home page, scroll to section
-            if (pathname === "/") {
-                const element = document.getElementById(sectionId);
-                if (element) {
-                    element.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                    });
-                    // Update URL without reload
-                    window.history.pushState({}, "", `/#${sectionId}`);
-                }
-            } else {
-                // If on another page, navigate to home with hash
-                router.push(`/#${sectionId}`);
-            }
-        },
-        [pathname, router]
-    );
+    const scrollToSection = useCallback((sectionId: string) => {
+        const element = document.getElementById(sectionId);
+        if (!element) return;
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.history.pushState({}, "", `#${sectionId}`);
+    }, []);
 
     const scrollToTop = useCallback(() => {
-        if (pathname === "/") {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            window.history.pushState({}, "", "/");
-        } else {
-            router.push("/");
-        }
-    }, [pathname, router]);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.history.pushState({}, "", "/");
+    }, []);
 
     return { scrollToSection, scrollToTop };
 }
