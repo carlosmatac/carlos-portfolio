@@ -1,13 +1,5 @@
-import AboutSection from "@/components/AboutSection";
-import Hero from "@/components/Hero";
-import WorkSection from "@/components/WorkSection";
+import MachineExperience from "@/components/machine/MachineExperience";
 
 export default function HomePage() {
-  return (
-    <main>
-      <Hero />
-      <AboutSection />
-      <WorkSection />
-    </main>
-  );
+  return <MachineExperience />;
 }

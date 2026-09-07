@@ -1,82 +1,80 @@
-## Carlos Mata — Portfolio
+# Por favor, toca — Carlos Mata
 
-Personal portfolio of **Carlos Mata**, a software engineer moving into data
-architecture (C++, Python, data platforms), based in Madrid.
+A playful portfolio built around a real-time 3D marble machine. The first screen
+is the experience: visitors can release marbles, change the destination, float
+them, rewind time, and take the assembly apart. Projects and professional
+information live in accessible dialogs alongside direct GitHub, LinkedIn, and
+email links.
 
-The site is a **single page** on a black canvas: the name at brutal scale over a
-dot field that reacts to the cursor, and exactly two destinations — **About** and
-**Work** — reached by smooth scroll. No cards, no thumbnails, no case-study
-pages: every project row links straight to its repository.
+## Run
 
-### Stack
-
-- **Framework**: Next.js 16 (App Router, `src/app`)
-- **Libraries**: React 19
-- **Styling**: Tailwind CSS 4 (CSS-first, tokens in `src/app/globals.css`)
-- **Typeface**: Geist, self-hosted via the `geist` package (no runtime font fetch)
-- **Language**: TypeScript
-- **Tests**: Vitest + Testing Library
-
-### Design system
-
-Defined as CSS variables in `src/app/globals.css`:
-
-| Token      | Value                      |
-| ---------- | -------------------------- |
-| `--bg`     | `#08080A` (near-black)     |
-| `--fg`     | `#EDEDE8` (off-white)      |
-| `--accent` | `#D9FF00` (acid lime)      |
-
-One theme only — there is no light mode. Pills are the only rounded shape; no
-shadows, no card backgrounds.
-
-### Structure
-
-- `src/app/layout.tsx` — root layout, Geist wiring, metadata.
-- `src/app/(site)/layout.tsx` — mounts `BackgroundField` and `Header` around the page.
-- `src/app/(site)/page.tsx` — the whole site: `Hero`, `AboutSection`, `WorkSection`.
-- `src/components/BackgroundField.tsx` — the reactive background. A fixed
-  `<canvas>` holding a lattice of dots that are pushed away from the pointer
-  within a radius and ease back; dots inside the radius light up in the accent.
-  With no pointer the focus follows a slow orbit. Honours
-  `prefers-reduced-motion` by painting a single static frame and registering no
-  listeners.
-- `src/components/Header.tsx` — fixed header. Absent over the hero; slides in
-  past the first viewport and marks the active section in accent.
-- `src/components/Hero.tsx` — name, tagline and the two buttons.
-- `src/components/AboutSection.tsx` — bio, "now" card, links, timeline, certifications.
-- `src/components/WorkSection.tsx` — typographic index of projects. Hovering (or
-  focusing) a row opens its one-liner, stack and repo buttons; on touch devices
-  the detail is always open.
-- `src/hooks/useActiveSection.ts` / `useSmoothScroll.ts` — section tracking and
-  scrolling for the single-page navigation.
-- `src/content/` — the data: `projects.ts`, `timeline.ts`, `certifications.ts`, `site.ts`.
-
-The old `/about`, `/work`, `/work/[slug]` and `/contact` routes are kept as
-redirects into the corresponding section, so existing links do not 404.
-
-### Local usage
-
-```bash
+```sh
 npm install
-npm run dev     # http://localhost:3000
+npm run dev
+npm run build
+npm start
 ```
 
-### Scripts
+Next.js 16, React 19, TypeScript, Three.js. Geist is served locally. The machine
+uses generated 3D geometry and an in-memory studio environment: there are no
+external model, texture, music, or font requests.
 
-- **`npm run dev`** — development server.
-- **`npm run build`** — production build.
-- **`npm run start`** — serve the production build.
-- **`npm run lint`** — ESLint with the Next.js config.
-- **`npm test`** — Vitest.
+## Controls
 
-### Deployment
+- **Suelta una canica** or **Space** when no other control is focused: release a
+  marble (up to 14 at once).
+- **Campana / Vuelo**: select the destination of the next marble. One rings a
+  bell and lights a lamp; the other launches a paper plane.
+- **El tiempo**: scrub the machine's route and Carlos's timeline. Return to the
+  present to continue playing.
+- **Gravedad**: float the marbles and return them to the rails.
+- **Desmontar**: separate the physical assemblies. Click the rails, flywheel,
+  bell, or plane to inspect the associated project. The project index offers
+  the same information without interacting with the 3D surface.
+- Drag to rotate; the three camera buttons also work with a keyboard.
+- Pause freezes the machine. Sound is synthesized locally and off by default.
 
-Any Next.js-compatible platform (currently Vercel): `npm run build`, then
-`npm run start`.
+The run follows a deterministic, reversible track. It is a designed kinetic toy,
+not a general-purpose rigid-body physics sandbox. Existing marbles retain their
+selected destination when the switch changes.
 
-### Ideas for evolution
+## Structure
 
-- Per-project screenshots as an optional right-hand column in the Work index.
-- Per-section Open Graph images.
-- Revisit the dot field's cost on low-end mobile devices.
+- `src/components/machine/MachineExperience.tsx`: accessible interface, dialogs,
+  audio, controls, loading/failure states, and legacy hash navigation.
+- `src/components/machine/create-machine.ts`: geometry, lighting, camera,
+  interaction, animation, and GPU-resource cleanup.
+- `src/lib/machine-physics.ts`: shared rail/marble coordinates and event crossings.
+- `src/content/`: existing profile, repositories, timeline, and certifications.
+- `src/app/globals.css`: the studio theme and responsive layouts.
+
+The WebGL module loads separately. Rendering stops when idle, hidden, or outside
+the viewport. Pixel ratio and active marble counts are capped. Reduced-motion
+settings give immediate, static outcomes. A WebGL failure retains access to all
+professional information and provides a retry. JavaScript-disabled visitors
+have direct professional links. Old `/about`, `/contact`, `/work`, and known
+`/work/[slug]` URLs continue to redirect to the appropriate home dialogs.
+
+## Checks
+
+```sh
+npm test -- --run
+npx tsc --noEmit
+npm run lint
+```
+
+Tests cover rail continuity, destination branching, time bounds, single-fire
+consequences, control transitions, keyboard behavior, legacy links, and WebGL
+failure recovery. Some retained, unused legacy components have pre-existing
+ESLint violations; the machine implementation is linted independently.
+
+## Static Sites build
+
+The default build preserves the existing Next.js deployment. Sites uses an
+optional static export:
+
+```sh
+SITES_EXPORT=1 npm run build
+```
+
+The output is `out/`; `.openai/hosting.json` identifies the Sites project.
