@@ -1,57 +1,34 @@
 import { render, screen } from '@testing-library/react';
-import ProjectCard from '../ProjectCard';
-import { TextModeProvider } from '../TextModeProvider';
 import { describe, it, expect, vi } from 'vitest';
+import type { CaseStudy } from '@/content/projects';
+import ProjectCard from '../ProjectCard';
 
-// Mock Next.js Link and Image
 vi.mock('next/link', () => ({
-    default: ({ children, href }: { children: React.ReactNode; href: string }) => (
-        <a href={href}>{children}</a>
-    ),
+  default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));
 
-vi.mock('next/image', () => ({
-    default: ({ src, alt }: { src: string; alt: string }) => (
-        <img src={src} alt={alt} />
-    ),
-}));
-
-const mockProject = {
-    slug: 'project-alpha',
-    title: 'Project Alpha',
-    oneLiner: 'A revolutionary project',
-    tags: ['React', 'TypeScript'],
-    thumb: '/images/alpha.jpg',
-    // Add other properties if required by the type, filling with dummies
-    description: 'Full description here',
-    date: '2023',
-    content: <div>Content</div>
+const mockProject: CaseStudy = {
+  slug: 'project-alpha',
+  title: 'Project Alpha',
+  oneLiner: 'A concise project summary',
+  context: 'A revolutionary project',
+  tags: ['React', 'TypeScript'],
+  year: '2023',
+  role: 'Software Engineer',
+  problem: [],
+  approach: [],
+  outcome: [],
 };
 
-// We need to match the actual type if it's strict, but for now we pass what we know is used.
-// If typescript complains we might need to verify the type definition.
-// For the test, we can cast or just match the shape if the component doesn't import the type strictly for checking in the test file (it does import it in implementation).
-// Ideally we import the type, but let's try to mock it.
-
 describe('ProjectCard Component', () => {
-    it('renders project title and description', () => {
-        // We wrap in TextModeProvider as the component might use it
-        render(
-            <TextModeProvider>
-                <ProjectCard p={mockProject as any} />
-            </TextModeProvider>
-        );
-
-        expect(screen.getByText(/Project Alpha/i)).toBeInTheDocument();
-        expect(screen.getByText(/A revolutionary project/i)).toBeInTheDocument();
-    });
-
-    it('renders tags', () => {
-        render(
-            <TextModeProvider>
-                <ProjectCard p={mockProject as any} />
-            </TextModeProvider>
-        );
-        expect(screen.getByText(/React/i)).toBeInTheDocument();
-    });
+  it('renders the project title and context', () => {
+    render(<ProjectCard p={mockProject} />);
+    expect(screen.getByText('Project Alpha')).toBeInTheDocument();
+    expect(screen.getByText('A revolutionary project')).toBeInTheDocument();
+  });
+  it('renders tags', () => {
+    render(<ProjectCard p={mockProject} />);
+    expect(screen.getByText('React')).toBeInTheDocument();
+    expect(screen.getByText('TypeScript')).toBeInTheDocument();
+  });
 });

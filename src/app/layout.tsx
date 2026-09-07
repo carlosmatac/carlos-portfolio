@@ -4,22 +4,22 @@ import { GeistSans } from "geist/font/sans";
 import { site } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Carlos Mata — Software & Data Engineering",
+  title: "Por favor, toca — Carlos Mata",
   description:
-    "Software & Data Engineer. Databricks, dbt and Snowflake at work; Node.js, React and Supabase on personal projects. Based in Madrid.",
+    "Una máquina de pequeñas consecuencias. Juega, explora y descubre los proyectos de Carlos Mata, Software & Data Engineer en Madrid.",
   icons: {
     icon: "/carlos_logo.svg",
   },
   openGraph: {
-    title: site.name,
-    description: "Software & Data Engineer.",
+    title: `Por favor, toca — ${site.name}`,
+    description: "Objetos, código y pequeñas consecuencias. Un portfolio para jugar.",
     type: "website",
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={GeistSans.variable}>
+    <html lang="es" className={GeistSans.variable}>
       <body>{children}</body>
     </html>
   );
