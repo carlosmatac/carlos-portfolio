@@ -25,6 +25,27 @@ describe('VintageMonitor', () => {
         // La sala, la peana y las capas de cristal son decorado, no contenido.
         expect(container.querySelectorAll('[aria-hidden="true"]').length).toBeGreaterThan(5);
     });
+
+    it('puede ir sin sala, para colgarlo de una escena que ya existe', () => {
+        const { container } = render(
+            <VintageMonitor room={false}>
+                <h1>Carlos Mata</h1>
+            </VintageMonitor>
+        );
+        expect(container.querySelector('.monitor-stage')).toBeNull();
+        expect(container.querySelector('.monitor-set')).not.toBeNull();
+    });
+
+    it('marca el cristal para que el scroll sepa a dónde entrar', () => {
+        const { container } = render(
+            <VintageMonitor>
+                <h1>Carlos Mata</h1>
+            </VintageMonitor>
+        );
+        const screen = container.querySelector('.monitor-screen');
+        expect(screen).not.toBeNull();
+        expect(screen).toContainElement(document.querySelector('h1'));
+    });
 });
 
 describe('MonitorHero', () => {

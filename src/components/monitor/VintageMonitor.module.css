@@ -2,12 +2,24 @@
    así que todo lo demás (carcasa, peana, mesa y pared) se ve solo porque
    el fósforo los ilumina. Todo es CSS: capas de gradientes y sombras. */
 
-.room {
+/* Colores y medidas viven aparte porque valen con sala y sin ella: --unit es
+   el ancho del aparato y de ahí cuelga todo lo demás. */
+.vars {
   --glow: 138 209 232;
   --amber: 255 176 87;
   /* El monitor se mantiene lejos: nunca más ancho que 660px ni más alto
      que la pantalla del visitante. */
   --unit: min(clamp(248px, 44vw, 660px), 70dvh);
+}
+
+/* Sin sala: solo el aparato, para colgarlo de una escena que ya existe. */
+.bare {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.room {
   position: relative;
   isolation: isolate;
   display: grid;
@@ -62,6 +74,21 @@
   position: relative;
   z-index: 1;
   width: var(--unit);
+  /* El centro óptico está en el cristal, más arriba que el del mueble. */
+  transform-origin: 50% 45%;
+  transform: scale(calc(1 + var(--enter, 0) * 8));
+}
+
+/* Al entrar, el mueble se apaga y deja sola a la imagen. */
+.hood,
+.chin,
+.pedestal,
+.base,
+.pool,
+.contact,
+.body::before,
+.well::before {
+  opacity: max(0, calc(1 - var(--enter, 0) * 1.7));
 }
 
 /* Cara superior de la carcasa: se ve en escorzo, con sus rejillas. */
@@ -87,7 +114,19 @@
   position: relative;
   padding: calc(var(--unit) * .055) calc(var(--unit) * .058) calc(var(--unit) * .118);
   border-radius: calc(var(--unit) * .05) calc(var(--unit) * .05) calc(var(--unit) * .028) calc(var(--unit) * .028);
-  background: linear-gradient(180deg, #3b3833 0, #2b2925 6%, #1e1c1a 44%, #131211 80%, #0a0908 100%);
+}
+
+/* Todo el mueble se pinta en esta capa, por debajo del cristal: el brillo del
+   canto, la curva del molde hacia la sombra y el plástico. */
+.body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, #ffffff12, transparent 11%, transparent 89%, #ffffff0a),
+    repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #3b3833 0, #2b2925 6%, #1e1c1a 44%, #131211 80%, #0a0908 100%);
   box-shadow:
     inset 0 1px 0 rgb(var(--glow) / .26),
     inset 1px 0 0 rgb(var(--glow) / .08),
@@ -96,17 +135,6 @@
     0 1px 0 #000,
     0 50px 90px -34px #000,
     0 0 130px -18px rgb(var(--glow) / .2);
-}
-
-/* El molde no es plano: los laterales se curvan hacia la sombra. */
-.body::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(90deg, #ffffff12, transparent 11%, transparent 89%, #ffffff0a),
-    repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 3px);
   pointer-events: none;
 }
 
@@ -114,12 +142,20 @@
 .well {
   position: relative;
   border-radius: calc(var(--unit) * .038);
+}
+
+.well::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: #000;
   box-shadow:
     inset 0 2px 6px #000,
     0 0 0 1px #000,
     0 1px 0 rgb(var(--glow) / .2),
     0 0 calc(var(--unit) * .16) rgb(var(--glow) / .22);
+  pointer-events: none;
 }
 
 .screen {
@@ -366,6 +402,6 @@
 }
 
 @media (max-width: 560px) {
-  .room { --unit: min(clamp(230px, 78vw, 430px), 62dvh); }
+  .vars { --unit: min(clamp(230px, 78vw, 430px), 62dvh); }
   .hint { letter-spacing: .12em; }
 }
