@@ -1,80 +1,61 @@
-# Por favor, toca — Carlos Mata
+# Carlos Mata — A few places that made me
 
-A playful portfolio built around a real-time 3D marble machine. The first screen
-is the experience: visitors can release marbles, change the destination, float
-them, rewind time, and take the assembly apart. Projects and professional
-information live in accessible dialogs alongside direct GitHub, LinkedIn, and
-email links.
+A minimal monitor entrance, a scroll-driven descent through the stars, then an
+interactive 3D Earth tracing Carlos's education and work:
 
-## Run
+**St. Louis → Granada → Brno → Munich → Madrid.**
+
+Each stop has a reading interval. Continuing to scroll pulls back into orbit,
+rotates to the next city and approaches the surface again. The whole journey is
+reversible, and the five location links also jump to individual chapters.
+
+## Run locally
 
 ```sh
 npm install
 npm run dev
-npm run build
-npm start
 ```
 
-Next.js 16, React 19, TypeScript, Three.js. Geist is served locally. The machine
-uses generated 3D geometry and an in-memory studio environment: there are no
-external model, texture, music, or font requests.
+Open http://localhost:3000. This does not publish the site.
 
-## Controls
+## Implementation
 
-- **Suelta una canica** or **Space** when no other control is focused: release a
-  marble (up to 14 at once).
-- **Campana / Vuelo**: select the destination of the next marble. One rings a
-  bell and lights a lamp; the other launches a paper plane.
-- **El tiempo**: scrub the machine's route and Carlos's timeline. Return to the
-  present to continue playing.
-- **Gravedad**: float the marbles and return them to the rails.
-- **Desmontar**: separate the physical assemblies. Click the rails, flywheel,
-  bell, or plane to inspect the associated project. The project index offers
-  the same information without interacting with the 3D surface.
-- Drag to rotate; the three camera buttons also work with a keyboard.
-- Pause freezes the machine. Sound is synthesized locally and off by default.
+Next.js 16, React 19, TypeScript and Three.js. System typography with locally
+served Geist. No new dependencies are needed for the Earth sequence.
 
-The run follows a deterministic, reversible track. It is a designed kinetic toy,
-not a general-purpose rigid-body physics sandbox. Existing marbles retain their
-selected destination when the switch changes.
+- `src/content/places.ts`: chapter copy and city-centre coordinates, based on the
+  existing professional timeline. The route follows the education/work story;
+  graduation and work dates can overlap.
+- `src/components/descent/DescentExperience.tsx`: scroll, HTML chapters,
+  accessibility and rendering lifecycle.
+- `src/components/descent/journey.ts`: entrance sequence.
+- `src/components/descent/earth-journey.ts`: departure, orbital transfer, landing
+  and reading intervals.
+- `src/components/descent/create-descent.ts`: monitor, star tunnel and camera.
+- `src/components/descent/create-earth.ts`: globe, day/night shading, moving
+  clouds, atmosphere, geographic markers and flight arcs.
+- `src/app/globals.css`: dark theme and mobile layouts.
 
-## Structure
+Earth maps are stored locally under `public/textures/earth/` (about 1.6 MB total).
+They are by [Solar System Scope / INOVE](https://www.solarsystemscope.com/textures/),
+used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), with credit
+in the experience and `ATTRIBUTION.md`. This is a globe-level journey, not a street
+map or terrain simulation.
 
-- `src/components/machine/MachineExperience.tsx`: accessible interface, dialogs,
-  audio, controls, loading/failure states, and legacy hash navigation.
-- `src/components/machine/create-machine.ts`: geometry, lighting, camera,
-  interaction, animation, and GPU-resource cleanup.
-- `src/lib/machine-physics.ts`: shared rail/marble coordinates and event crossings.
-- `src/content/`: existing profile, repositories, timeline, and certifications.
-- `src/app/globals.css`: the studio theme and responsive layouts.
+The scene loads separately, pixel ratio is capped, and rendering pauses when
+hidden. Reduced-motion visitors get static city views without the flight.
+If WebGL is unavailable, a CSS globe and the same chapters remain accessible.
+Visitors without JavaScript get a readable list of all five chapters.
+The previous machine code remains in `src/components/machine`, unloaded.
 
-The WebGL module loads separately. Rendering stops when idle, hidden, or outside
-the viewport. Pixel ratio and active marble counts are capped. Reduced-motion
-settings give immediate, static outcomes. A WebGL failure retains access to all
-professional information and provides a retry. JavaScript-disabled visitors
-have direct professional links. Old `/about`, `/contact`, `/work`, and known
-`/work/[slug]` URLs continue to redirect to the appropriate home dialogs.
-
-## Checks
+## Checks and builds
 
 ```sh
 npm test -- --run
 npx tsc --noEmit
-npm run lint
+npx eslint src/components/descent src/content/places.ts
+npm run build
 ```
 
-Tests cover rail continuity, destination branching, time bounds, single-fire
-consequences, control transitions, keyboard behavior, legacy links, and WebGL
-failure recovery. Some retained, unused legacy components have pre-existing
-ESLint violations; the machine implementation is linted independently.
-
-## Static Sites build
-
-The default build preserves the existing Next.js deployment. Sites uses an
-optional static export:
-
-```sh
-SITES_EXPORT=1 npm run build
-```
-
-The output is `out/`; `.openai/hosting.json` identifies the Sites project.
+`npm start` serves a production build. The previous Sites configuration is
+preserved; `SITES_EXPORT=1 npm run build` produces the optional static export.
