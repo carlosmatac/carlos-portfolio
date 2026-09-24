@@ -13,7 +13,7 @@ function orientation(latitude: number, longitude: number) {
 }
 
 /** Local, attributed maps with a procedural day/night terminator and atmosphere. */
-export function createEarth(scene: THREE.Scene, anisotropy: number) {
+export function createEarth(scene: THREE.Scene, anisotropy: number, maxTextureSize = 8192) {
   const root = new THREE.Group();
   root.position.set(0, 0.57 - 85, 0.9 - 240 - 18);
   scene.add(root);
@@ -22,9 +22,22 @@ export function createEarth(scene: THREE.Scene, anisotropy: number) {
   let disposed = false;
   const loader = new THREE.TextureLoader();
   const textures: THREE.Texture[] = [];
+  const highDetail = window.innerWidth >= 900 && maxTextureSize >= 8192;
+  const mediumDetail = maxTextureSize >= 4096;
   function map(name: string, color = true) {
-    const texture = loader.load(`/textures/earth/${name}.jpg`, loaded => {
+    const texture = loader.load(`/textures/earth/${name}`, loaded => {
       if (disposed) loaded.dispose();
+    }, undefined, () => {
+      if (disposed || name.endsWith(".jpg")) return;
+      // Keep an image on devices/network paths that cannot load the detailed maps.
+      const fallback = name.startsWith("day") ? "day.jpg" : "clouds.jpg";
+      loader.load(`/textures/earth/${fallback}`, loaded => {
+        if (!disposed) {
+          texture.image = loaded.image;
+          texture.needsUpdate = true;
+        }
+        loaded.dispose();
+      });
     });
     texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     texture.anisotropy = Math.min(8, anisotropy);
@@ -34,7 +47,7 @@ export function createEarth(scene: THREE.Scene, anisotropy: number) {
   const vertex = `varying vec2 vUv; varying vec3 vNormal; varying vec3 vPosition;
     void main(){vUv=uv;vNormal=normalize(normalMatrix*normal);vec4 p=modelViewMatrix*vec4(position,1.0);vPosition=p.xyz;gl_Position=projectionMatrix*p;}`;
   const surface = new THREE.ShaderMaterial({
-    uniforms: { uDay: {value:map("day")}, uNight: {value:map("night")} },
+    uniforms: { uDay: {value:map(highDetail ? "day-8k.webp" : mediumDetail ? "day-4k.webp" : "day.jpg")}, uNight: {value:map("night.jpg")} },
     vertexShader: vertex,
     fragmentShader: `
       uniform sampler2D uDay; uniform sampler2D uNight;
@@ -46,22 +59,25 @@ export function createEarth(scene: THREE.Scene, anisotropy: number) {
         float day=smoothstep(-0.16,0.20,light);
         vec3 land=texture2D(uDay,vUv).rgb;
         vec3 night=texture2D(uNight,vUv).rgb;
-        vec3 color=land*(0.035+max(light,0.0)*1.25);
+        // Cool, restrained colour leaves coastlines and cloud detail readable.
+        float luminance=dot(land,vec3(0.2126,0.7152,0.0722));
+        land=mix(vec3(luminance)*vec3(0.72,0.88,1.06),land,0.36);
+        vec3 color=land*(0.055+max(light,0.0)*1.05);
         color+=night*(1.0-day)*1.8;
         float rim=pow(1.0-max(dot(normal,view),0.0),3.6);
-        color+=vec3(0.07,0.32,0.75)*rim*(0.25+day*0.6);
+        color+=vec3(0.08,0.21,0.34)*rim*(0.2+day*0.45);
         gl_FragColor=vec4(color,1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
   });
-  globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 96, 64), surface));
+  globe.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS, 160, 96), surface));
   const cloudsMaterial = new THREE.ShaderMaterial({
-    uniforms: {uClouds:{value:map("clouds", false)}}, vertexShader: vertex,
+    uniforms: {uClouds:{value:map(highDetail ? "clouds-4k.webp" : "clouds.jpg", false)}}, vertexShader: vertex,
     transparent: true, depthWrite: false,
     fragmentShader:`uniform sampler2D uClouds;varying vec2 vUv;varying vec3 vNormal;
       void main(){float clouds=texture2D(uClouds,vUv).r;float light=max(dot(normalize(vNormal),normalize(vec3(-0.85,0.45,0.9))),0.0);
-      gl_FragColor=vec4(vec3(0.5,0.64,0.8)*(0.12+light),smoothstep(0.12,0.85,clouds)*0.58);
+      gl_FragColor=vec4(vec3(0.5,0.64,0.8)*(0.12+light),smoothstep(0.10,0.9,clouds)*0.64);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
       }`,
@@ -72,7 +88,7 @@ export function createEarth(scene: THREE.Scene, anisotropy: number) {
     vertexShader: vertex, side: THREE.BackSide, transparent: true, depthWrite:false, blending:THREE.AdditiveBlending,
     fragmentShader:`varying vec3 vNormal;varying vec3 vPosition;
       void main(){float rim=pow(1.0-abs(dot(normalize(vNormal),normalize(-vPosition))),3.5);
-      gl_FragColor=vec4(vec3(0.13,0.38,0.85)*rim,rim*0.48);}`,
+      gl_FragColor=vec4(vec3(0.15,0.32,0.5)*rim,rim*0.35);}`,
   });
   root.add(new THREE.Mesh(new THREE.SphereGeometry(RADIUS + 0.095, 96, 64), atmosphereMaterial));
 

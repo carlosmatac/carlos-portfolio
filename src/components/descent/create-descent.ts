@@ -2,6 +2,10 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { JourneyFrame } from "./journey";
 import { createEarth } from "./create-earth";
+import { earthFraming } from "./motion";
+import { createStLouis } from "./cities/create-st-louis";
+import type { CityScene } from "./cities/types";
+import { createTransition } from "./transitions/create-transition";
 
 export interface DescentScene {
   render: (frame: JourneyFrame, seconds: number, reduced: boolean) => void;
@@ -12,7 +16,7 @@ export interface DescentScene {
 /** The monitor, tunnel and final object occupy one continuous 3D space. */
 export function createDescent(host: HTMLElement, identity: HTMLElement, onContextLost: () => void): DescentScene {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.5 : 2));
   renderer.setClearColor(0x030407, 0);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -127,7 +131,14 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
   trails.frustumCulled = false;
   tunnel.add(trails);
 
-  const earth = createEarth(scene, renderer.capabilities.getMaxAnisotropy());
+  const earth = createEarth(scene, renderer.capabilities.getMaxAnisotropy(), renderer.capabilities.maxTextureSize);
+
+  const transition = createTransition(renderer);
+  let city: CityScene | null = null;
+  let cityReadyAt: number | null = null;
+  function resizeCity() {
+    city?.resize(width, height, width < 700 ? "mobile" : "desktop");
+  }
 
   const projected = new THREE.Vector3();
   const displayTopLeft = new THREE.Vector3(-4.565, 3.135, 0.06);
@@ -140,7 +151,10 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
       camera.aspect = width / height;
       startZ = Math.max(10.3, 9.48 / (2 * Math.tan(THREE.MathUtils.degToRad(21)) * camera.aspect * 0.88));
       camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 700 ? 1.5 : 2));
       renderer.setSize(width, height);
+      transition.resize(width, height, Math.min(renderer.getPixelRatio(), width < 700 ? 1 : 1.5));
+      resizeCity();
     },
     render(frame, seconds, reduced) {
       camera.clearViewOffset();
@@ -177,21 +191,30 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
       trailUniforms.uLength.value = frame.speed * 11;
       trailUniforms.uOpacity.value = frame.stars * frame.speed * 0.8;
       tunnel.visible = !reduced && frame.stars > 0.001;
-      const mobile = width <= 700;
       earth.update(frame.earth, seconds, reduced);
-      if (frame.progress >= 0.25) {
-        const fitDistance = mobile ? 3.3 * height / (0.384 * width * 0.83) : 8.8;
-        const near = Math.max(mobile ? 13 : 8.8, fitDistance);
-        const far = Math.max(18, near * 1.55);
-        const approach = THREE.MathUtils.lerp(18, near, frame.earth.landing);
-        const distance = THREE.MathUtils.lerp(approach, far, frame.earth.altitude);
+      const framing = earthFraming(width, height);
+      if (frame.timeline.introT >= 1) {
+        const approach = THREE.MathUtils.lerp(18, framing.visitDistance, frame.earth.landing);
+        const distance = THREE.MathUtils.lerp(approach, framing.transitDistance, frame.earth.altitude);
         camera.position.copy(earth.root.position).add(new THREE.Vector3(0, 0, distance));
         camera.lookAt(earth.root.position);
       }
-      const framing = frame.earth.landing;
-      camera.setViewOffset(width, height, mobile ? 0 : -width * 0.22 * framing, mobile ? height * 0.23 * framing : 0, width, height);
+      const placed = frame.earth.landing;
+      camera.setViewOffset(width, height, framing.offsetX * placed, framing.offsetY * placed, width, height);
       camera.updateMatrixWorld();
-      renderer.render(scene, camera);
+      const cityFrame = frame.timeline.city;
+      const preload = frame.timeline.phase.kind === "earth-reveal" && frame.timeline.phase.sceneId === "st-louis-sky";
+      if ((cityFrame || preload) && !city) {
+        city = createStLouis(width < 700 ? "mobile" : "desktop");
+        cityReadyAt = null;
+        resizeCity();
+      } else if (!cityFrame && !preload && city) {
+        city.dispose(); city = null; cityReadyAt = null;
+      }
+      if (cityFrame && frame.timeline.blend > 0) city?.update({ ...cityFrame, ambientSeconds: seconds, reduced });
+      if (city?.status === "ready" && cityReadyAt === null) cityReadyAt = seconds;
+      const readiness = cityReadyAt === null ? 0 : reduced ? 1 : Math.min(1, Math.max(0, (seconds - cityReadyAt) / 0.35));
+      transition.render(scene, camera, city?.scene ?? null, city?.camera ?? null, frame.timeline.blend * readiness);
     },
     dispose() {
       canvas.removeEventListener("webglcontextlost", contextLost);
@@ -203,6 +226,7 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
         }
       });
       geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose());
+      city?.dispose(); transition.dispose();
       earth.dispose();
       black.dispose();
       renderer.dispose(); canvas.remove();

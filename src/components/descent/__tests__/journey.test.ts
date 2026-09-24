@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { journeyAt } from "../journey";
-import { earthAt, INTRO_END, stopProgress, STOP_INTERVAL } from "../earth-journey";
+import { earthAt, INTRO_END, stopProgress } from "../earth-journey";
+import { JOURNEY } from "../journey-timeline";
 import { places } from "@/content/places";
 import { locationVector } from "../create-earth";
 
@@ -26,9 +27,9 @@ describe("Scroll journey", () => {
 
   it("lands at every city in order and leaves its chapter readable", () => {
     places.forEach((_,index)=>{
-      const frame=earthAt(stopProgress(index)+0.005);
+      const frame=earthAt(stopProgress(index));
       expect(frame.active).toBe(index);
-      expect(frame.altitude).toBe(0);
+      expect(frame.altitude).toBeCloseTo(0, 10);
       expect(frame.text).toBe(1);
     });
     expect(earthAt(1).active).toBe(places.length-1);
@@ -37,14 +38,14 @@ describe("Scroll journey", () => {
 
   it("leaves the surface before transferring and lands continuously", () => {
     for(let index=0;index<places.length-1;index++){
-      const start=stopProgress(index);
-      const transfer=earthAt(start+STOP_INTERVAL*0.6);
+      const phase = JOURNEY.phases.find(p => p.kind === "transfer" && p.cityIndex === index)!;
+      const transfer=earthAt((phase.startH + phase.weightH * 0.6) / JOURNEY.totalH);
       expect(transfer.altitude).toBe(1);
       expect(transfer.text).toBe(0);
       expect(transfer.turn).toBeGreaterThan(0);
       expect(transfer.turn).toBeLessThan(1);
-      const before=earthAt(stopProgress(index+1)-0.000001);
-      const after=earthAt(stopProgress(index+1)+0.000001);
+      const before=earthAt(stopProgress(index+1)-0.00000001);
+      const after=earthAt(stopProgress(index+1)+0.00000001);
       expect(before.active).toBe(after.active);
       expect(Math.abs(before.altitude-after.altitude)).toBeLessThan(0.00001);
       expect(Math.abs(before.text-after.text)).toBeLessThan(0.00001);

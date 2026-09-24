@@ -1,11 +1,12 @@
 import { clamp01, smoothstep } from "./easing";
-import { earthAt, INTRO_END } from "./earth-journey";
+import { JOURNEY, sampleJourney } from "./journey-timeline";
 export { clamp01, smoothstep } from "./easing";
 
 /** The entrance remains the same; the rest of the scroll now travels the Earth. */
 export function journeyAt(progress: number, reducedMotion = false) {
   const p = clamp01(progress);
-  const intro = clamp01(p / INTRO_END);
+  const timeline = sampleJourney(p * JOURNEY.totalH, JOURNEY, reducedMotion);
+  const intro = timeline.introT;
   const zoom = smoothstep(0, 0.32, intro);
   const fall = clamp01((intro - 0.32) / 0.56);
   return {
@@ -18,7 +19,8 @@ export function journeyAt(progress: number, reducedMotion = false) {
     prompt: 1 - smoothstep(0.015, 0.10, intro),
     screen: 1 - smoothstep(0.27, 0.35, intro),
     stars: reducedMotion ? 0 : smoothstep(0.29, 0.38, intro),
-    earth: earthAt(p, reducedMotion),
+    earth: timeline.earth,
+    timeline,
   };
 }
 export type JourneyFrame = ReturnType<typeof journeyAt>;
