@@ -1,5 +1,5 @@
-import MachineExperience from "@/components/machine/MachineExperience";
+import DescentExperience from "@/components/descent/DescentExperience";
 
 export default function HomePage() {
-  return <MachineExperience />;
+  return <DescentExperience />;
 }

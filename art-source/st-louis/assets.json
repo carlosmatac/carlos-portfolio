@@ -1,0 +1,42 @@
+{
+  "source": "arch-clouds.blend",
+  "generator": "build.py",
+  "blender": "5.2.2 LTS",
+  "renderer": "Cycles CPU, transparent RGBA, AgX",
+  "arch_samples": 128,
+  "cloud_samples": 128,
+  "preview": false,
+  "provenance": "Original parametric arch and procedural cloud volume created for this portfolio. No third-party models, images or HDRIs.",
+  "assets": [
+    {
+      "file": "public/images/cities/st-louis/arch-render.webp",
+      "width": 1920,
+      "height": 2240,
+      "bytes": 87316,
+      "sha256": "3ef245d6ac4643ffc4877eae7b13200eb24d5c732e872eac623a39812984d7fd"
+    },
+    {
+      "file": "public/images/cities/st-louis/arch-render-mobile.webp",
+      "width": 960,
+      "height": 1120,
+      "bytes": 50244,
+      "sha256": "ea10df7a3e0a24bca182c46ebff2f898502b6823a0fc830ae0243c6de93e3943"
+    },
+    {
+      "file": "public/images/cities/st-louis/cloud-bank.webp",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 214152,
+      "sha256": "9b5c81c67487a736ccc96a87c665a33fd4c6de05dbc5ed0d6b3d0926407aecd4"
+    },
+    {
+      "file": "public/images/cities/st-louis/cloud-bank-mobile.webp",
+      "width": 1024,
+      "height": 512,
+      "bytes": 60048,
+      "sha256": "3189755bde97221258db97ac38404185cdb7edc10a91f900f5aa48be26f63c5d"
+    }
+  ],
+  "cloud_alpha_optical_density": 2.2,
+  "cloud_edge_filter_pixels": 0.65
+}

@@ -4,22 +4,22 @@ import { GeistSans } from "geist/font/sans";
 import { site } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Por favor, toca — Carlos Mata",
+  title: "Carlos Mata — Software & Data",
   description:
-    "Una máquina de pequeñas consecuencias. Juega, explora y descubre los proyectos de Carlos Mata, Software & Data Engineer en Madrid.",
+    "Software, data, and a little curiosity. Explore the work of Carlos Mata, Software & Data Engineer in Madrid.",
   icons: {
     icon: "/carlos_logo.svg",
   },
   openGraph: {
-    title: `Por favor, toca — ${site.name}`,
-    description: "Objetos, código y pequeñas consecuencias. Un portfolio para jugar.",
+    title: site.name,
+    description: "Software, data, and a little curiosity.",
     type: "website",
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={GeistSans.variable}>
+    <html lang="en" className={GeistSans.variable}>
       <body>{children}</body>
     </html>
   );
