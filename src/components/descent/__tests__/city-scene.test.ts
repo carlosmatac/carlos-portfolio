@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { gzipSync } from "node:zlib";
 import { createStLouis } from "../cities/create-st-louis";
+import { ARCH, archCentre, archSide, FLAG, sampleArch, sampleFlag, stLouisCamera, stLouisView } from "../cities/st-louis-art";
 import { createCloudVolume, CLOUD_ASSETS } from "../clouds/cloud-volume";
 import { cloudPassage, cloudPassageEye } from "../transitions/cloud-passage";
 import { createTransition } from "../transitions/create-transition";
@@ -26,61 +27,91 @@ beforeEach(() => {
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-describe("Blender artwork scene", () => {
-  it("loads the approved arch and a genuinely volumetric cloud field, not the discarded city geometry", async () => {
-    const city = createStLouis();
-    expect(city.assetStage).toBe("render");
-    expect(city.status).toBe("loading");
-    expect(requests.map(r => r.url)).toEqual([
-      "/images/cities/st-louis/arch-render.webp",
-    ]);
-    expect(city.scene.getObjectByName("Landmark_Arch")).toBeDefined();
-    expect(city.scene.getObjectByName("Clouds_Foreground")).toBeDefined();
-    expect(city.scene.getObjectByName("Landmark_Stadium")).toBeUndefined();
-    expect(city.scene.getObjectByName("Water_River")).toBeUndefined();
-    requests[0].load(); expect(city.status).toBe("loading");
-    await city.atmosphere.ready; expect(city.status).toBe("ready");
-    expect(city.atmosphere.texture).toBeInstanceOf(THREE.Data3DTexture);
-    const bank = city.scene.getObjectByName("Clouds_Foreground") as THREE.Mesh;
-    expect(bank.geometry).toBeInstanceOf(THREE.BoxGeometry);
-    expect(bank.scale.z).toBeGreaterThan(1);
-    requests.forEach(r => expect(r.texture.colorSpace).toBe(THREE.SRGBColorSpace));
-    city.dispose();
+describe("Point-cloud St. Louis", () => {
+  const project = (point: THREE.Vector3, width: number, height: number) => {
+    const view = stLouisView(width, height), pose = stLouisCamera(view, 0, [0, 0]);
+    const camera = new THREE.PerspectiveCamera(view.fov, width / height, 0.5, 3000);
+    camera.position.set(...pose.position); camera.lookAt(...pose.target); camera.updateMatrixWorld();
+    const p = point.clone().project(camera);
+    return { x: (p.x + 1) / 2, y: (1 - p.y) / 2 };
+  };
+
+  it("samples a catenary arch with a tapering triangular section, as tall as it is wide", () => {
+    expect(archCentre(-1)).toEqual([-ARCH.span / 2, 0]);
+    expect(archCentre(1)[1]).toBeCloseTo(0, 6);
+    expect(archCentre(0)).toEqual([0, ARCH.height]);
+    expect(archSide(0)).toBeCloseTo(5.5); expect(archSide(1)).toBeCloseTo(1.7);
+    const points = sampleArch();
+    expect(points.length).toBeGreaterThan(5000); expect(points.length).toBeLessThan(20000);
+    const base = points.filter(p => p.height < 0.05), crown = points.filter(p => p.height > 0.98);
+    expect(Math.max(...base.map(p => Math.abs(p.position[2])))).toBeGreaterThan(Math.max(...crown.map(p => Math.abs(p.position[2]))) * 2);
+    points.forEach(p => expect(Math.hypot(...p.normal)).toBeCloseTo(1));
   });
 
-  it("uses smaller mobile assets and a portrait composition rather than cropping the desktop view", () => {
+  it("lays out the Stars and Stripes: thirteen stripes, red at top and bottom, fifty stars in a blue canton", () => {
+    const flag = sampleFlag(), stars = flag.filter(p => p.part === "star");
+    expect(stars).toHaveLength(50);
+    const at = (u: number, v: number) => flag.reduce((best, p) => Math.hypot(p.position[0] - FLAG.x - u, p.position[1] - FLAG.y - v) < Math.hypot(best.position[0] - FLAG.x - u, best.position[1] - FLAG.y - v) ? p : best);
+    expect(at(FLAG.length * 0.8, FLAG.height - 0.1).part).toBe("red");
+    expect(at(FLAG.length * 0.8, 0.1).part).toBe("red");
+    expect(at(FLAG.length * 0.8, FLAG.height * (1 - 1.5 / 13)).part).toBe("white");
+    expect(at(FLAG.length * 0.1, FLAG.height * 0.95).part).toBe("blue");
+    stars.forEach(s => { expect(s.position[0] - FLAG.x).toBeLessThan(FLAG.length * 0.4); expect(s.position[1] - FLAG.y).toBeGreaterThan(FLAG.height * 6 / 13); });
+  });
+
+  it("frames the arch right of the desktop story and above the mobile story", () => {
+    for (const [w, h] of [[1440, 900], [1920, 1080], [1280, 720]]) {
+      const crown = project(new THREE.Vector3(0, ARCH.height, 0), w, h), left = project(new THREE.Vector3(-ARCH.span / 2, 0, 0), w, h), right = project(new THREE.Vector3(ARCH.span / 2, 0, 0), w, h);
+      expect(left.x).toBeGreaterThan(0.33); expect(right.x).toBeLessThan(0.95); expect(crown.y).toBeGreaterThan(0.12); expect(left.y).toBeLessThan(0.9);
+    }
+    for (const [w, h] of [[390, 844], [430, 932]]) {
+      const crown = project(new THREE.Vector3(0, ARCH.height, 0), w, h), foot = project(new THREE.Vector3(ARCH.span / 2, 0, 0), w, h);
+      expect(crown.y).toBeGreaterThan(0.05); expect(foot.y).toBeLessThan(0.52); expect(foot.x).toBeLessThan(1);
+    }
+  });
+
+  it("builds the riverfront from points without loading any image", async () => {
     const city = createStLouis("mobile");
-    expect(requests.every(r => r.url.endsWith("-mobile.webp"))).toBe(true);
-    const arch = city.scene.getObjectByName("Landmark_Arch")!;
-    city.resize(1440, 900, "desktop"); city.update(resting);
-    const desktop = arch.scale.clone();
-    city.resize(390, 844, "mobile");
-    expect(arch.scale.y).toBeLessThan(desktop.y);
-    expect(arch.position.x).toBe(0);
-    expect(arch.position.y).toBeGreaterThan(0);
-    expect(city.camera.aspect).toBeCloseTo(390 / 844);
-    expect(requests).toHaveLength(1);
+    expect(city.status).toBe("loading");
+    for (const name of ["Gateway_Arch", "Arch_Reflection", "US_Flag", "Flag_Pole", "Old_Courthouse", "Downtown", "Busch_Stadium", "Mississippi", "Riverfront", "Levee_Traffic"]) {
+      expect(city.scene.getObjectByName(name), name).toBeDefined();
+    }
+    await city.atmosphere.ready;
+    expect(city.status).toBe("ready");
+    expect(requests).toHaveLength(0);
+    city.dispose(); expect(city.status).toBe("disposed");
+  });
+
+  it("parts points around the cursor, catches more wind in the flag and ripples on click", () => {
+    const width = window.innerWidth, height = window.innerHeight;
+    const city = createStLouis("desktop");
+    city.resize(width, height, "desktop");
+    const uniforms = ((city.scene.getObjectByName("US_Flag") as THREE.Points).material as THREE.ShaderMaterial).uniforms, now = () => performance.now() / 1000;
+    for (let i = 0; i < 10; i++) city.update({ ...resting, ambientSeconds: now() + i * 0.05 });
+    const calm = uniforms.flag.value.w;
+    const centre = new THREE.Vector3(FLAG.x + FLAG.length / 2, FLAG.y + FLAG.height / 2, FLAG.z).project(city.camera);
+    window.dispatchEvent(new PointerEvent("pointermove", { clientX: (centre.x + 1) / 2 * width, clientY: (1 - centre.y) / 2 * height, pointerType: "mouse" }));
+    for (let i = 0; i < 40; i++) city.update({ ...resting, ambientSeconds: now() + 1 + i * 0.05 });
+    expect(uniforms.flag.value.w).toBeGreaterThan(calm + 0.8);
+    expect(uniforms.pointer.value).toBeGreaterThan(0.9);
+    window.dispatchEvent(new PointerEvent("pointerdown", { clientX: 10, clientY: 10, pointerType: "mouse" }));
+    expect(uniforms.ripple.value.z).toBe(0);
+    city.update({ ...resting, reduced: true, ambientSeconds: now() + 4 });
+    expect(uniforms.time.value).toBe(0); expect(uniforms.assemble.value).toBe(1);
     city.dispose();
   });
 
-  it("is reversible and keeps a front-facing image without artificial camera orbit", () => {
-    const city = createStLouis();
-    city.resize(1440, 900, "desktop"); city.update(resting);
-    const rest = city.camera.position.clone();
+  it("is reversible and assembles the skyline while landing", () => {
+    const city = createStLouis(), uniforms = ((city.scene.getObjectByName("Gateway_Arch") as THREE.Points).material as THREE.ShaderMaterial).uniforms;
+    city.resize(1440, 900, "desktop");
     city.update({ ...resting, arrivalT: 0.5 });
     const mid = city.camera.matrixWorld.clone();
+    expect(uniforms.assemble.value).toBeCloseTo(0.5);
     city.update({ ...resting, departureT: 0.9 });
     city.update({ ...resting, arrivalT: 0.5 });
     expect(city.camera.matrixWorld.equals(mid)).toBe(true);
-    expect(city.camera.position.x).toBe(0);
-    expect(city.camera.position.y).toBeGreaterThan(0);
-    expect(city.camera.getWorldDirection(new THREE.Vector3()).toArray()).toEqual([-0, -0, -1]);
-    city.update({ ...resting, arrivalT: 0, departureT: 1, reduced: true });
-    expect(city.camera.position.equals(rest)).toBe(true);
-    const cloud = city.scene.getObjectByName("Clouds_Foreground")!;
-    const cloudPosition = cloud.position.clone();
-    city.update({ ...resting, ambientSeconds: 100, reduced: true });
-    expect(cloud.position.equals(cloudPosition)).toBe(true);
+    city.update(resting);
+    expect(city.camera.position.y).toBeLessThan(mid.elements[13]);
     city.dispose();
   });
 
@@ -99,34 +130,23 @@ describe("Blender artwork scene", () => {
     city.dispose();
   });
 
-  it("releases all shared resources and ignores image completions after disposal", async () => {
-    const city = createStLouis(), resources = new Set<THREE.BufferGeometry | THREE.Material>();
+  it("releases every geometry, material and listener exactly once", async () => {
+    const city = createStLouis(), resources = new Set<{ dispose: () => void }>();
     city.scene.traverse(object => {
-      if (object instanceof THREE.Mesh) {
+      if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
         resources.add(object.geometry);
         for (const material of Array.isArray(object.material) ? object.material : [object.material]) resources.add(material);
       }
     });
     await city.atmosphere.ready;
     const volumeDispose = vi.spyOn(city.atmosphere.texture!, "dispose");
-    const detailDispose = vi.spyOn(city.atmosphere.detail!, "dispose");
+    const removed = vi.spyOn(window, "removeEventListener");
     const spies = [...resources].map(resource => vi.spyOn(resource, "dispose"));
-    const textures = requests.map(r => vi.spyOn(r.texture, "dispose"));
-    city.dispose();
+    city.dispose(); city.dispose();
     spies.forEach(spy => expect(spy).toHaveBeenCalledOnce());
-    textures.forEach(spy => expect(spy).toHaveBeenCalledOnce());
     expect(volumeDispose).toHaveBeenCalledOnce();
-    expect(detailDispose).toHaveBeenCalledOnce();
-    requests.forEach(r => r.load());
-    expect(city.status).toBe("disposed");
+    expect(removed).toHaveBeenCalledWith("pointerdown", expect.any(Function));
     expect(city.scene.children).toHaveLength(0);
-  });
-
-  it("reports an asset error instead of displaying a partially loaded scene", () => {
-    const city = createStLouis();
-    requests[0].fail();
-    expect(city.status).toBe("error");
-    city.dispose();
   });
 });
 
@@ -166,14 +186,14 @@ describe("Single-renderer transition", () => {
 });
 
 
-it("warms city textures and shaders before descent, and composites above the unchanged Earth output", async () => {
+it("warms city shaders before descent, and composites above the unchanged Earth output", async () => {
   const renderer = { render: vi.fn(), setRenderTarget: vi.fn(), getRenderTarget: () => null,
     compile: vi.fn(), initTexture: vi.fn(), autoClear: true, extensions: { has: () => true } };
   const transition = createTransition(renderer as unknown as THREE.WebGLRenderer);
-  const city = createStLouis(); requests[0].load(); await city.atmosphere.ready;
+  const city = createStLouis(); await city.atmosphere.ready;
   city.update(resting);
   transition.prepare(city.scene, city.camera);
-  expect(renderer.initTexture).toHaveBeenCalledTimes(3);
+  expect(renderer.initTexture).not.toHaveBeenCalled();
   expect(renderer.compile).toHaveBeenCalledTimes(2);
   expect(renderer.setRenderTarget.mock.calls.at(-1)).toEqual([null]);
   renderer.setRenderTarget.mockClear(); renderer.render.mockClear();

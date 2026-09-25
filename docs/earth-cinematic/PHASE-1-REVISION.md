@@ -11,6 +11,15 @@ La petición posterior de Carlos añade una parada estable `#earth` entre la int
 - Regeneración de volúmenes: `node art-source/clouds/build-volume.mjs`. Dimensiones, bytes y hashes están en `art-source/clouds/assets.json`. El cargador limita el tamaño descomprimido y cancela descargas descartadas.
 - Verificación: `npm test -- --run`, `npx eslint src/components/descent art-source/clouds/build-volume.mjs`, `npm run build`. Los tests de shaders requieren además navegador con WebGL; los mocks unitarios no compilan GLSL.
 
+## St. Louis — nube de puntos
+
+St. Louis usa ya la técnica de Madrid (puntos-símbolo finos, paleta violeta y ámbar, puntos que se apartan del cursor, onda al hacer clic, montaje al llegar). El sistema común está en `cities/point-cloud.ts` (`createPointField`, materiales con variantes FOG, SKY, FLAG y REFLECTION, carriles de paquetes y `disposeScene`) y lo comparten St. Louis y Madrid. Sustituye al render de Blender con nubes volumétricas; las imágenes `public/images/cities/st-louis/` siguen solo para el fallback HTML y el paso de nubes sin WebGL.
+
+- `st-louis-art.ts`: el Gateway Arch como catenaria (alto = ancho = 64 unidades) con sección triangular que se estrecha de ~16,5 m a ~5,2 m, muestreada por estaciones con la arista exterior hacia fuera. Bandera de EE. UU. con 13 franjas, cantón azul y 50 estrellas (cruces blancas), ondeando en el shader.
+- Escena vista desde la orilla de Illinois: arco con su reflejo roto en el Mississippi, bandera entre las patas, cúpula del Old Courthouse enmarcada, downtown con ventanas ámbar, Busch Stadium en rojo, rejilla del frente fluvial, tráfico en el dique y estrellas.
+- Cursor: los puntos se apartan; la bandera recibe más viento cuando el cursor pasa por encima; el clic lanza una onda. Movimiento reducido: todo ensamblado y quieto, la bandera sin viento.
+- Tests: `__tests__/city-scene.test.ts` (arco, bandera, encuadre, cursor, reversibilidad, recursos).
+
 ## Granada — mosaico nazarí
 
 Granada es la segunda escena urbana (`granada-sky`). Usa la tubería de `cities/dot-matrix.ts` de Brno y Múnich, con un lenguaje propio que junta Alhambra, Ingeniería Informática y UGR:
