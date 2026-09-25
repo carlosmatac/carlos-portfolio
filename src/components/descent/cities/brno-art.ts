@@ -4,8 +4,8 @@
  */
 type Vec3 = [number, number, number];
 
-/** One tram every cycle: arrives, dwells at the stop, departs and leaves the street empty for a moment. */
-export const TRAM_CYCLE = { approach: 7, dwell: 8, depart: 7, gap: 1.5 };
+/** One tram every cycle: arrives, pauses briefly, departs and the next one follows almost at once. */
+export const TRAM_CYCLE = { approach: 4, dwell: 1.2, depart: 4, gap: 0.3 };
 export const TRAM_STOP_X = 5;
 const TRAM_ENTRY_X = 70;
 export function tramState(seconds: number, reduced = false) {
