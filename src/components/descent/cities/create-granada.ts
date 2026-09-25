@@ -5,6 +5,7 @@ import {
   ALHAMBRA, enclosureHalfWidth, granadaCamera, granadaView, marchTerrain, patrolPoint, random, ridgeZ, terrainHeight,
   type GranadaView,
 } from "./granada-art";
+import { trackPointer } from "./pointer";
 import type { CityFrame, CityQuality, CityScene } from "./types";
 
 type Vec3 = [number, number, number];
@@ -404,16 +405,7 @@ export function createGranada(quality: CityQuality = "desktop"): CityScene {
   });
 
   // Cursor input: a mouse or pen steers the lantern and a gentle parallax; touch keeps the ambient patrol.
-  const pointer = { x: 0, y: 0, seen: -Infinity, inside: false };
-  const onPointer = (event: PointerEvent) => {
-    if (event.pointerType === "touch") return;
-    pointer.x = event.clientX / Math.max(1, window.innerWidth) * 2 - 1;
-    pointer.y = 1 - event.clientY / Math.max(1, window.innerHeight) * 2;
-    pointer.seen = performance.now() / 1000; pointer.inside = true;
-  };
-  const onLeave = (event: PointerEvent) => { if (!event.relatedTarget) pointer.inside = false; };
-  window.addEventListener("pointermove", onPointer, { passive: true });
-  document.addEventListener("pointerout", onLeave);
+  const cursor = trackPointer(), pointer = cursor.state;
 
   let view: GranadaView = granadaView(1440, 900), disposed = false, lastSeconds = 0;
   let current: CityFrame = { arrivalT: 1, visitT: 0, departureT: 0, ambientSeconds: 0, reduced: false };
@@ -428,7 +420,7 @@ export function createGranada(quality: CityQuality = "desktop"): CityScene {
       const seconds = frame.ambientSeconds, dt = Math.min(0.1, Math.max(0, seconds - lastSeconds));
       lastSeconds = seconds;
       const ease = (tau: number) => 1 - Math.exp(-dt / tau);
-      const hovering = pointer.inside && seconds - pointer.seen < 8;
+      const hovering = cursor.hovering(seconds);
       follow.active += (Number(hovering) - follow.active) * ease(0.6);
       follow.x += ((hovering ? pointer.x : 0) - follow.x) * ease(0.5);
       follow.y += ((hovering ? pointer.y : 0) - follow.y) * ease(0.5);
@@ -482,8 +474,7 @@ export function createGranada(quality: CityQuality = "desktop"): CityScene {
     dispose() {
       if (disposed) return;
       disposed = true;
-      window.removeEventListener("pointermove", onPointer);
-      document.removeEventListener("pointerout", onLeave);
+      cursor.dispose();
       const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
       scene.traverse(object => {
         if (object instanceof THREE.Mesh || object instanceof THREE.Points) {

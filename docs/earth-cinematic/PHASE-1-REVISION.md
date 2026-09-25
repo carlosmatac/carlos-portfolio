@@ -23,6 +23,17 @@ Granada es la segunda escena urbana (`granada-sky`); Brno, Múnich y Madrid sigu
 - Tests: `src/components/descent/__tests__/granada.test.ts` (encuadre de escritorio y móvil, relieve, picking, cursor y táctil, reversibilidad, liberación de recursos).
 - Los anchors normalizados admiten el error de redondeo de coma flotante para no dejar Granada artificialmente en el último instante de llegada.
 
+## Brno — matriz de puntos
+
+Brno es la tercera escena urbana (`brno-pixel`); Múnich y Madrid siguen sobre la Tierra. La inspiración es el hero de castle.tech (Unicorn Studio: glyph dither + estela del ratón). La implementación es propia y no usa su código ni sus assets.
+
+- `cities/create-brno.ts` renderiza fuera de pantalla una calle procedural: tranvía Tatra T3 rojo y crema con pantógrafo, catenaria, parada, fachadas, Petrov y Špilberk en silueta, y un cielo de hora azul. La pasa por una matriz de glifos de 5×5, ordenados por cobertura, conservando el tono de la imagen. Sin imágenes.
+- El render intermedio y la estela se dibujan en `onBeforeRender` del quad de la escena (el mismo patrón que `Reflector` de three), así que el contrato `CityScene` y el compositor no cambian.
+- Cursor: una estela (campo velocidad/densidad en ping-pong, con decaimiento por tiempo) desplaza la imagen con separación RGB y centellea. Alrededor del cursor la rejilla se divide a la mitad y actúa como lupa de resolución. En táctil no hay estela.
+- El tranvía sigue un horario determinista (`brno-art.ts`: frena, para, arranca). Al llegar, su posición depende solo de `arrivalT` y entra en la parada justo al aterrizar. Durante la llegada y la salida los píxeles se engordan y se resuelven. Con movimiento reducido queda parado y sin estela.
+- La lectura del relato: en escritorio se atenúa el tercio izquierdo y en vertical la mitad inferior. El fallback es CSS (matriz de puntos).
+- Tests: `__tests__/brno.test.ts`.
+
 ## Revisión original
 
 

@@ -300,6 +300,7 @@ export default function DescentExperience() {
           <div className="fallback-city-cloud fallback-city-cloud-near" />
         </div>
         <div className="fallback-granada" aria-hidden="true" />
+        <div className="fallback-brno" aria-hidden="true" />
         <div className="earth-shade" aria-hidden="true" />
         <p className="earth-intro" aria-hidden="true">A few places that made me.</p>
         <div className="fallback-passage" aria-hidden="true" />

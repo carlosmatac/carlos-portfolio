@@ -37,25 +37,25 @@ describe("A gesture visits one stop", () => {
 });
 
 describe("Timed, reversible flights", () => {
-  it("takes 4.8 seconds between cities and lands exactly at the next stop", () => {
-    const flight = createFlight(br, mu, 1000);
-    expect(flightPosition(flight, 1000)).toBe(br);
-    expect(flightPosition(flight, 3400)).toBeCloseTo((flight.segments[0].from + mu) / 2);
-    expect(flightPosition(flight, 5800)).toBe(mu);
-    expect(flightPosition(flight, 20000)).toBe(mu);
-    expect(flightPosition(flight, 1100)).toBeGreaterThan(br + 0.001);
+  it("takes 4.8 seconds between Earth-only cities and lands exactly at the next stop", () => {
+    const flight = createFlight(mu, madrid, 1000);
+    expect(flightPosition(flight, 1000)).toBe(mu);
+    expect(flightPosition(flight, 3400)).toBeCloseTo((flight.segments[0].from + madrid) / 2);
+    expect(flightPosition(flight, 5800)).toBe(madrid);
+    expect(flightPosition(flight, 20000)).toBe(madrid);
+    expect(flightPosition(flight, 1100)).toBeGreaterThan(mu + 0.001);
   });
 
   it("has identical trajectories at different frame rates and in reverse", () => {
-    const forward = createFlight(br, mu, 0);
-    const reverse = createFlight(mu, br, 0);
+    const forward = createFlight(mu, madrid, 0);
+    const reverse = createFlight(madrid, mu, 0);
     for (const elapsed of [100, 500, 1000, 2400, 3500]) {
-      expect(flightPosition(forward, elapsed) + flightPosition(reverse, elapsed)).toBeCloseTo(forward.segments[0].from + mu);
+      expect(flightPosition(forward, elapsed) + flightPosition(reverse, elapsed)).toBeCloseTo(forward.segments[0].from + madrid);
     }
     for (const hz of [30, 60, 120]) {
       let value = 0;
       for (let frame = 0; frame <= hz * 4.8; frame++) value = flightPosition(forward, frame * 1000 / hz);
-      expect(value).toBeCloseTo(mu);
+      expect(value).toBeCloseTo(madrid);
     }
   });
 });

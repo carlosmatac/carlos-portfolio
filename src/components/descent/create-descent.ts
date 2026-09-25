@@ -3,13 +3,14 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import type { JourneyFrame } from "./journey";
 import { createEarth } from "./create-earth";
 import { earthCameraDistance, earthFraming, smootherRange } from "./motion";
+import { createBrno } from "./cities/create-brno";
 import { createGranada } from "./cities/create-granada";
 import { createStLouis } from "./cities/create-st-louis";
 import type { CitySceneId } from "./journey-config";
 import type { CityScene, CityQuality } from "./cities/types";
 import { createTransition } from "./transitions/create-transition";
 
-const cityFactories = { "st-louis-sky": createStLouis, "granada-sky": createGranada } satisfies Record<CitySceneId, (quality: CityQuality) => CityScene>;
+const cityFactories = { "st-louis-sky": createStLouis, "granada-sky": createGranada, "brno-pixel": createBrno } satisfies Record<CitySceneId, (quality: CityQuality) => CityScene>;
 
 export interface DescentScene {
   render: (frame: JourneyFrame, seconds: number, reduced: boolean) => void;
