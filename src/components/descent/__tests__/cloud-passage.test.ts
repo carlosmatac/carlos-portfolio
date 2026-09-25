@@ -61,7 +61,7 @@ describe("Fast approach, progressive braking", () => {
     expect(createFlight(0, EARTH_STOP, 0)).toMatchObject({ duration: 5600, profile: "orbit" });
     expect(createFlight(EARTH_STOP, stopProgress(0), 0)).toMatchObject({ duration: 4800, profile: "cloud" });
     expect(createFlight(stopProgress(2), stopProgress(3), 0)).toMatchObject({ duration: 4800, profile: "cloud" });
-    expect(createFlight(stopProgress(3), stopProgress(4), 0)).toMatchObject({ duration: 4800, profile: "orbit" });
+    expect(createFlight(stopProgress(3), stopProgress(4), 0)).toMatchObject({ duration: 4800, profile: "cloud" });
     for (const [from, to] of [[EARTH_STOP, stopProgress(0)], [stopProgress(0), EARTH_STOP]]) {
       const flight = createFlight(from, to, 0);
       for (const hz of [30, 60, 120]) {

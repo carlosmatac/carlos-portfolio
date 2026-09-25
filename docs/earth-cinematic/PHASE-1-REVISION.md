@@ -34,6 +34,16 @@ Brno es la tercera escena urbana (`brno-pixel`); Múnich y Madrid siguen sobre l
 - La lectura del relato: en escritorio se atenúa el tercio izquierdo y en vertical la mitad inferior. El fallback es CSS (matriz de puntos).
 - Tests: `__tests__/brno.test.ts`.
 
+## Múnich — pantalla de misión
+
+Múnich es la cuarta escena urbana (`munich-mission`); solo Madrid sigue sobre la Tierra. Usa la misma tubería que Brno, extraída a `cities/dot-matrix.ts` (render fuera de pantalla, estela ping-pong, lupa, atenuación del relato), con otro lenguaje visual:
+
+- Dígitos 0–9 en fuente de 5×7 ordenados por tinta (`munich-art.ts`), celdas de 6×8, tramado con ruido y paleta táctica: azul HAT → cian → blanco. Las fuentes cálidas se pintan en ámbar y las azules conservan el azul. Un barrido de radar recorre la pantalla y algunos dígitos cambian como datos en vivo.
+- Escena: un Airbus H145 (cabina, cola Fenestron, patines, rotor de cuatro palas, foco de búsqueda) sobre la azotea de HAT.tec, con el rótulo del logo iluminado. El helipuerto lleva el triángulo azul en vez de la H. La ruta de misión son waypoints con forma del triángulo HAT. Detrás: una pareja de Eurofighter con estelas, Frauenkirche, Olympiaturm, el edificio de BMW, las luces de la ciudad y los Alpes con alpenglow de Föhn.
+- Cursor: visor térmico (paleta white-hot) con corchetes de puntería. El H145 vuela hacia el punto bajo el cursor (`aimPoint` y un muelle críticamente amortiguado que inclina el morro y alabea) y, cuando está dentro del visor, los corchetes se bloquean en ámbar. La estela desordena los dígitos en ámbar. En táctil, el H145 hace un vuelo estacionario suave.
+- Movimiento reducido: helicóptero quieto, rotor parado, sin estela ni barrido; cazas congelados.
+- Tests: `__tests__/munich.test.ts`.
+
 ## Revisión original
 
 

@@ -27,9 +27,9 @@ function mockRenderer(float = true) {
   };
 }
 
-it("gives Brno its own urban scene while Munich and Madrid stay on the Earth", () => {
+it("gives Brno its own urban scene while Madrid stays on the Earth", () => {
   expect(sampleJourney(JOURNEY.anchors.brno).city?.sceneId).toBe("brno-pixel");
-  for (const id of ["munich", "madrid"]) expect(sampleJourney(JOURNEY.anchors[id]).city).toBeNull();
+  for (const id of ["madrid"]) expect(sampleJourney(JOURNEY.anchors[id]).city).toBeNull();
 });
 
 it("runs a deterministic tram timetable: brakes into the stop, dwells, departs, and parks with reduced motion", () => {

@@ -2,44 +2,17 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { createCloudVolume } from "../clouds/cloud-volume";
 import { brnoCamera, brnoCell, brnoView, GLYPHS, random, tramState, TRAM_CYCLE, TRAM_STOP_X, type BrnoView } from "./brno-art";
+import { createDotMatrix, DOT_MATRIX_GLSL } from "./dot-matrix";
 import { trackPointer } from "./pointer";
 import type { CityFrame, CityQuality, CityScene } from "./types";
-
-const FULLSCREEN_VERTEX = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
-
-/** Cursor trail: a decaying velocity/density field advected with a small cross blur. */
-const TRAIL_FRAGMENT = /* glsl */ `
-  varying vec2 vUv;
-  uniform sampler2D previous; uniform vec2 texel; uniform vec2 from; uniform vec2 to;
-  uniform float aspect; uniform float decay; uniform float drawing; uniform float packed;
-  vec3 decode(vec4 c) { return packed > 0.5 ? vec3(c.xy * 2.0 - 1.0, c.z) : c.xyz; }
-  void main() {
-    vec3 field = decode(texture2D(previous, vUv)) * 0.4
-      + (decode(texture2D(previous, vUv + vec2(texel.x, 0.0))) + decode(texture2D(previous, vUv - vec2(texel.x, 0.0)))
-      + decode(texture2D(previous, vUv + vec2(0.0, texel.y))) + decode(texture2D(previous, vUv - vec2(0.0, texel.y)))) * 0.15;
-    field *= decay;
-    vec2 scale = vec2(aspect, 1.0), a = from * scale, b = to * scale, p = vUv * scale, ab = b - a;
-    float len = length(ab);
-    float h = len > 0.0 ? clamp(dot(p - a, ab) / (len * len), 0.0, 1.0) : 0.0;
-    float s = 1.0 - smoothstep(0.0, 0.09, length(p - a - ab * h));
-    float deposit = clamp(len * 14.0, 0.0, 1.0) * s * s * drawing;
-    field.xy = clamp(field.xy + (len > 0.0 ? ab / len : vec2(0.0)) * deposit, -1.0, 1.0);
-    field.z = clamp(max(field.z, deposit), 0.0, 1.0);
-    gl_FragColor = packed > 0.5 ? vec4(field.xy * 0.5 + 0.5, field.z, 1.0) : vec4(field, 1.0);
-  }`;
 
 /**
  * Dot-matrix display: each cell samples the render, maps its luminance to a 5×5 glyph and keeps its hue.
  * The cursor trail smears and splits the image; around the cursor the grid halves to reveal finer detail.
  */
 const DISPLAY_FRAGMENT = /* glsl */ `
-  varying vec2 vUv;
-  uniform sampler2D source; uniform sampler2D trail;
-  uniform vec2 resolution; uniform float micro; uniform vec2 mouse; uniform float lens; uniform float lensRadius;
-  uniform float time; uniform float packed; uniform float ready; uniform float story;
+  ${DOT_MATRIX_GLSL}
   const int GLYPHS[8] = int[8](${GLYPHS.join(", ")});
-  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
   void main() {
     vec2 frag = gl_FragCoord.xy;
     float cell = micro * 6.0;
@@ -49,16 +22,14 @@ const DISPLAY_FRAGMENT = /* glsl */ `
     float size = fine ? cell * 0.5 : cell;
     vec2 index = floor(frag / size), local = frag - index * size;
     vec2 centre = (index + 0.5) * size / resolution;
-    vec4 t = texture2D(trail, centre);
-    vec3 field = packed > 0.5 ? vec3(t.xy * 2.0 - 1.0, t.z) : t.xyz;
+    vec3 field = trailAt(centre);
     vec2 offset = field.xy * field.z * 0.055;
     vec3 colour = vec3(
       texture2D(source, centre - offset * 1.35).r,
       texture2D(source, centre - offset).g,
       texture2D(source, centre - offset * 0.65).b) * ready;
     float light = 1.0 - exp(-mix(luma(colour), max(colour.r, max(colour.g, colour.b)), 0.55) * 2.4);
-    float quiet = story > 1.5 ? smoothstep(0.44, 0.6, vUv.y) : smoothstep(0.06, 0.44, vUv.x);
-    light = pow(light, 1.1) * mix(1.0, quiet * 0.9 + 0.1, step(0.5, story)) + field.z * (hash(index + floor(time * 14.0)) - 0.35) * 0.45;
+    light = pow(light, 1.1) * storyLight() + field.z * (hash(index + floor(time * 14.0)) - 0.35) * 0.45;
     float level = clamp(floor(light * 8.0), 0.0, 7.0);
     bool ink;
     if (fine) {
@@ -282,70 +253,14 @@ export function createBrno(quality: CityQuality = "desktop"): CityScene {
   const { tram, wheels, spark, sparkLight } = buildTram(materials, geometries);
   world.add(tram);
 
-  // Display: fullscreen dot-matrix; its onBeforeRender draws the street and the cursor trail with the shared renderer.
-  const scene = new THREE.Scene();
-  scene.name = "Brno_Dot_Matrix";
+  const matrix = createDotMatrix({ name: "Brno_Dot_Matrix", world, eye, fragmentShader: DISPLAY_FRAGMENT });
+  const { scene, camera } = matrix;
   scene.userData.technique = "Procedural 3D street rendered off-screen and re-drawn as a 5×5 glyph matrix with a cursor trail.";
-  scene.userData.world = world; scene.userData.eye = eye;
-  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 10);
-  const displayUniforms = {
-    source: { value: null as THREE.Texture | null }, trail: { value: null as THREE.Texture | null },
-    resolution: { value: new THREE.Vector2(1, 1) }, micro: { value: 1 }, mouse: { value: new THREE.Vector2(-1e4, -1e4) },
-    lens: { value: 0 }, lensRadius: { value: 120 }, time: { value: 0 }, packed: { value: 0 }, ready: { value: 0 }, story: { value: 1 },
-  };
-  const display = new THREE.Mesh(own(new THREE.PlaneGeometry(2, 2)), mat(new THREE.ShaderMaterial({
-    uniforms: displayUniforms, depthTest: false, depthWrite: false, vertexShader: FULLSCREEN_VERTEX, fragmentShader: DISPLAY_FRAGMENT,
-  })));
-  display.name = "Dot_Matrix"; display.frustumCulled = false;
-  scene.add(display);
-  const trailUniforms = {
-    previous: { value: null as THREE.Texture | null }, texel: { value: new THREE.Vector2(1, 1) }, from: { value: new THREE.Vector2() }, to: { value: new THREE.Vector2() },
-    aspect: { value: 1 }, decay: { value: 0.9 }, drawing: { value: 0 }, packed: { value: 0 },
-  };
-  const trailScene = new THREE.Scene();
-  const trailQuad = new THREE.Mesh(display.geometry, mat(new THREE.ShaderMaterial({ uniforms: trailUniforms, vertexShader: FULLSCREEN_VERTEX, fragmentShader: TRAIL_FRAGMENT, depthTest: false, depthWrite: false })));
-  trailQuad.frustumCulled = false;
-  trailScene.add(trailQuad);
-  let targets: { source: THREE.WebGLRenderTarget; trail: [THREE.WebGLRenderTarget, THREE.WebGLRenderTarget] } | null = null;
-  let size = { width: 1440, height: 900, ratio: 1 }, trailPending = false;
-  display.onBeforeRender = renderer => {
-    const float = renderer.extensions.has("EXT_color_buffer_float");
-    const sw = Math.max(1, Math.round(size.width * size.ratio / 2)), sh = Math.max(1, Math.round(size.height * size.ratio / 2));
-    const tw = Math.max(1, Math.ceil(size.width / 8)), th = Math.max(1, Math.ceil(size.height / 8));
-    if (!targets) {
-      const type = float ? THREE.HalfFloatType : THREE.UnsignedByteType;
-      const trail = () => new THREE.WebGLRenderTarget(tw, th, { type, depthBuffer: false });
-      targets = { source: new THREE.WebGLRenderTarget(sw, sh, { type }), trail: [trail(), trail()] };
-      targets.source.texture.colorSpace = THREE.LinearSRGBColorSpace;
-      displayUniforms.packed.value = trailUniforms.packed.value = Number(!float);
-      const previous = renderer.getRenderTarget(), clear = renderer.getClearColor(new THREE.Color()), alpha = renderer.getClearAlpha();
-      renderer.setClearColor(float ? 0x000000 : 0x808000, 1);
-      for (const t of targets.trail) { renderer.setRenderTarget(t); renderer.clear(); }
-      renderer.setClearColor(clear, alpha); renderer.setRenderTarget(previous);
-    }
-    targets.source.setSize(sw, sh);
-    targets.trail.forEach(t => t.setSize(tw, th));
-    const previous = renderer.getRenderTarget();
-    renderer.setRenderTarget(targets.source);
-    renderer.render(world, eye);
-    if (trailPending) {
-      trailUniforms.previous.value = targets.trail[0].texture;
-      trailUniforms.texel.value.set(1 / tw, 1 / th);
-      renderer.setRenderTarget(targets.trail[1]);
-      renderer.render(trailScene, camera);
-      targets.trail.reverse();
-      trailPending = false;
-    }
-    renderer.setRenderTarget(previous);
-    displayUniforms.source.value = targets.source.texture;
-    displayUniforms.trail.value = targets.trail[0].texture;
-    displayUniforms.ready.value = 1;
-  };
 
   const cursor = trackPointer();
-  let view: BrnoView = brnoView(1440, 900), disposed = false, lastSeconds = 0, landedAt: number | null = null;
+  let view: BrnoView = brnoView(1440, 900), width = 1440, disposed = false, lastSeconds = 0, landedAt: number | null = null;
   let current: CityFrame = { arrivalT: 1, visitT: 0, departureT: 0, ambientSeconds: 0, reduced: false };
-  const follow = { x: 0, y: 0, active: 0 }, lastUv = new THREE.Vector2(-1, -1), uv = new THREE.Vector2();
+  const follow = { x: 0, y: 0, active: 0 };
   const api: CityScene = {
     id: "brno-pixel", assetStage: "render", scene, camera, atmosphere,
     get status() { return disposed ? "disposed" : atmosphere.status === "error" ? "error" : atmosphere.status === "ready" ? "ready" : "loading"; },
@@ -374,29 +289,11 @@ export function createBrno(quality: CityQuality = "desktop"): CityScene {
       const sparking = !frame.reduced && state.speed > 2 && flicker - Math.floor(flicker) > 0.55;
       spark.visible = sparking; sparkLight.intensity = sparking ? 40 : 0;
 
-      const micro = Math.max(1, Math.round(size.ratio * brnoCell(size.width, excursion) / 6));
-      displayUniforms.micro.value = micro;
-      displayUniforms.time.value = frame.reduced ? 0 : seconds;
-      displayUniforms.lens.value += ((hovering ? 1 : 0) * (1 - excursion) - displayUniforms.lens.value) * ease(0.25);
-      displayUniforms.mouse.value.set((pointer.x * 0.5 + 0.5) * size.width * size.ratio, (pointer.y * 0.5 + 0.5) * size.height * size.ratio);
-      uv.set(pointer.x * 0.5 + 0.5, pointer.y * 0.5 + 0.5);
-      trailUniforms.from.value.copy(lastUv.x < 0 ? uv : lastUv);
-      trailUniforms.to.value.copy(uv);
-      trailUniforms.drawing.value = Number(hovering && !frame.reduced);
-      trailUniforms.decay.value = Math.exp(-dt / 0.45);
-      lastUv.copy(uv);
-      trailPending = true;
+      matrix.update({ seconds, dt, excursion, reduced: frame.reduced, hovering, pointer, cellCss: brnoCell(width, excursion) });
     },
-    resize(width, height) {
-      view = brnoView(width, height);
-      size = { width: Math.max(1, width), height: Math.max(1, height), ratio: Math.min(window.devicePixelRatio || 1, 1.5) };
-      eye.aspect = camera.aspect = size.width / size.height;
-      eye.fov = view.fov;
-      eye.updateProjectionMatrix(); camera.updateProjectionMatrix();
-      displayUniforms.resolution.value.set(Math.round(size.width * size.ratio), Math.round(size.height * size.ratio));
-      displayUniforms.lensRadius.value = (width < 700 ? 80 : 130) * size.ratio;
-      displayUniforms.story.value = width >= 700 && width / Math.max(1, height) >= 0.9 ? 1 : 2;
-      trailUniforms.aspect.value = eye.aspect;
+    resize(w, h) {
+      view = brnoView(w, h); width = w;
+      matrix.resize(w, h, view.fov);
       api.update(current);
     },
     dispose() {
@@ -406,8 +303,7 @@ export function createBrno(quality: CityQuality = "desktop"): CityScene {
       new Set(geometries).forEach(g => g.dispose());
       new Set(materials).forEach(m => m.dispose());
       world.traverse(object => { if (object instanceof THREE.InstancedMesh) object.dispose(); });
-      if (targets) { targets.source.dispose(); targets.trail.forEach(t => t.dispose()); targets = null; }
-      atmosphere.dispose(); world.clear(); scene.clear();
+      matrix.dispose(); atmosphere.dispose(); world.clear();
     },
   };
   api.resize(1440, 900, quality);

@@ -30,7 +30,7 @@ const lanternOf = (city: ReturnType<typeof createGranada>) =>
 
 it("enables Granada without enabling the remaining Earth-only cities", () => {
   expect(sampleJourney(JOURNEY.anchors.granada).city?.sceneId).toBe("granada-sky");
-  for (const id of ["munich", "madrid"]) expect(sampleJourney(JOURNEY.anchors[id]).city).toBeNull();
+  expect(sampleJourney(JOURNEY.anchors.madrid).city).toBeNull();
 });
 
 it("models the Alhambra on the Sabika above the Darro, with Sierra Nevada rising behind", () => {
@@ -142,7 +142,7 @@ it("releases every owned GPU resource and its window listeners exactly once", as
 it("resolves normalized city anchors to stable visits despite floating-point round trips", () => {
   for (let i = 0; i < 5; i++) {
     const frame = sampleJourney(stopProgress(i) * JOURNEY.totalH);
-    expect(frame.phase.kind).toBe(i < 3 ? "visit" : "earth-visit");
+    expect(frame.phase.kind).toBe(i < 4 ? "visit" : "earth-visit");
     expect(frame.t).toBeCloseTo(0, 10);
   }
 });

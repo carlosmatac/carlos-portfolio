@@ -224,10 +224,15 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
   background: radial-gradient(ellipse 34% 9% at 64% 60%, #d98a4a33, transparent), linear-gradient(#020309, #070a16 52%, #0d1122 60%, #030407 74%); }
 .fallback-brno { display: none; position: absolute; inset: 0; opacity: var(--city-opacity, 0); pointer-events: none;
   background: radial-gradient(ellipse 45% 40% at 62% 58%, transparent, #030407), radial-gradient(circle, #e5d3ae40 1px, transparent 1.6px) 0 0 / 6px 6px, radial-gradient(ellipse 30% 14% at 64% 66%, #b3201840, transparent), #030407; }
-.descent-viewport:is([data-city="granada"], [data-city="brno"])[data-renderer] .fallback-city { display: none; }
+.fallback-munich { display: none; position: absolute; inset: 0; opacity: var(--city-opacity, 0); pointer-events: none;
+  background: radial-gradient(ellipse 45% 40% at 62% 50%, transparent, #030407), radial-gradient(circle, #4d8fd666 1px, transparent 1.6px) 0 0 / 6px 8px, linear-gradient(transparent 55%, #b85a1a30 64%, transparent 72%), #030407; }
+.descent-viewport:is([data-city="granada"], [data-city="brno"], [data-city="munich"])[data-renderer] .fallback-city { display: none; }
 [data-city="granada"][data-renderer="fallback"] .fallback-granada,
 [data-city="granada"][data-city-asset="loading"] .fallback-granada,
 [data-city="granada"][data-city-asset="error"] .fallback-granada,
 [data-city="brno"][data-renderer="fallback"] .fallback-brno,
 [data-city="brno"][data-city-asset="loading"] .fallback-brno,
-[data-city="brno"][data-city-asset="error"] .fallback-brno { display: block; }
+[data-city="brno"][data-city-asset="error"] .fallback-brno,
+[data-city="munich"][data-renderer="fallback"] .fallback-munich,
+[data-city="munich"][data-city-asset="loading"] .fallback-munich,
+[data-city="munich"][data-city-asset="error"] .fallback-munich { display: block; }

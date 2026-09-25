@@ -37,10 +37,11 @@ describe("A gesture visits one stop", () => {
 });
 
 describe("Timed, reversible flights", () => {
-  it("takes 4.8 seconds between Earth-only cities and lands exactly at the next stop", () => {
+  it("takes 4.8 seconds between cities and lands exactly at the next stop", () => {
     const flight = createFlight(mu, madrid, 1000);
     expect(flightPosition(flight, 1000)).toBe(mu);
-    expect(flightPosition(flight, 3400)).toBeCloseTo((flight.segments[0].from + madrid) / 2);
+    expect(flightPosition(flight, 3400)).toBeGreaterThan(flight.segments[0].from);
+    expect(flightPosition(flight, 3400)).toBeLessThan(madrid);
     expect(flightPosition(flight, 5800)).toBe(madrid);
     expect(flightPosition(flight, 20000)).toBe(madrid);
     expect(flightPosition(flight, 1100)).toBeGreaterThan(mu + 0.001);
