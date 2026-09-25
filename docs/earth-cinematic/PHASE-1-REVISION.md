@@ -44,6 +44,16 @@ Múnich es la cuarta escena urbana (`munich-mission`); solo Madrid sigue sobre l
 - Movimiento reducido: helicóptero quieto, rotor parado, sin estela ni barrido; cazas congelados.
 - Tests: `__tests__/munich.test.ts`.
 
+## Madrid — skyline de datos
+
+Madrid es la quinta escena (`madrid-latent`). Todas las paradas aterrizan ya en una ciudad. Técnica distinta a Brno y Múnich: no hay render intermedio ni matriz; la escena se dibuja directamente como puntos-símbolo (punto, cruz, cuadrado, rombo) con blending aditivo.
+
+- `cities/madrid-art.ts` muestrea las Cuatro Torres planta a planta con siluetas propias: la corona en arco de Cepsa, la planta trilobulada de PwC con corona abierta, el remate inclinado de Cristal y el giro de cuadrado a lente de Emperador. Las plantas se leen como filas de una tabla y las filas encendidas van en ámbar.
+- Data Engineering: el suelo es un lago de datos en rejilla, con niebla de partículas entre las bases. Pipelines ETL en Bézier con paquetes que alimentan las torres, las conectan entre sí y suben al espacio latente; el tráfico de la Castellana son dos carriles de paquetes.
+- AI Engineering: en el cielo hay clusters de embeddings. El cursor es un vector de consulta: `nearest` busca los k vecinos proyectados (con separación mínima para que el top‑k se abra), los ilumina y traza los enlaces desde el cursor. Las torres se apartan alrededor del cursor y un clic lanza una onda de consulta. En táctil o sin cursor, una consulta automática recorre los clusters.
+- Llegada y salida: las torres se ensamblan desde puntos dispersos, primero las plantas bajas; al salir se disuelven. Movimiento reducido: ensamblado, sin flujos ni deriva.
+- Tests: `__tests__/madrid.test.ts`.
+
 ## Revisión original
 
 

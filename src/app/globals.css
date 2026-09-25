@@ -226,7 +226,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
   background: radial-gradient(ellipse 45% 40% at 62% 58%, transparent, #030407), radial-gradient(circle, #e5d3ae40 1px, transparent 1.6px) 0 0 / 6px 6px, radial-gradient(ellipse 30% 14% at 64% 66%, #b3201840, transparent), #030407; }
 .fallback-munich { display: none; position: absolute; inset: 0; opacity: var(--city-opacity, 0); pointer-events: none;
   background: radial-gradient(ellipse 45% 40% at 62% 50%, transparent, #030407), radial-gradient(circle, #4d8fd666 1px, transparent 1.6px) 0 0 / 6px 8px, linear-gradient(transparent 55%, #b85a1a30 64%, transparent 72%), #030407; }
-.descent-viewport:is([data-city="granada"], [data-city="brno"], [data-city="munich"])[data-renderer] .fallback-city { display: none; }
+.fallback-madrid { display: none; position: absolute; inset: 0; opacity: var(--city-opacity, 0); pointer-events: none;
+  background: radial-gradient(ellipse 30% 45% at 64% 48%, #8d7cf033, transparent 70%), radial-gradient(circle, #9aa4ff40 1px, transparent 1.6px) 0 0 / 5px 7px, linear-gradient(transparent 62%, #3a1d3a55 72%, transparent 80%), #030407; }
+.descent-viewport:is([data-city="granada"], [data-city="brno"], [data-city="munich"], [data-city="madrid"])[data-renderer] .fallback-city { display: none; }
 [data-city="granada"][data-renderer="fallback"] .fallback-granada,
 [data-city="granada"][data-city-asset="loading"] .fallback-granada,
 [data-city="granada"][data-city-asset="error"] .fallback-granada,
@@ -235,4 +237,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 [data-city="brno"][data-city-asset="error"] .fallback-brno,
 [data-city="munich"][data-renderer="fallback"] .fallback-munich,
 [data-city="munich"][data-city-asset="loading"] .fallback-munich,
-[data-city="munich"][data-city-asset="error"] .fallback-munich { display: block; }
+[data-city="munich"][data-city-asset="error"] .fallback-munich,
+[data-city="madrid"][data-renderer="fallback"] .fallback-madrid,
+[data-city="madrid"][data-city-asset="loading"] .fallback-madrid,
+[data-city="madrid"][data-city-asset="error"] .fallback-madrid { display: block; }

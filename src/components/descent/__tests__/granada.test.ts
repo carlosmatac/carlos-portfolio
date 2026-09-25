@@ -28,9 +28,8 @@ function project(point: THREE.Vector3, width: number, height: number) {
 const lanternOf = (city: ReturnType<typeof createGranada>) =>
   ((city.scene.getObjectByName("Ground") as THREE.Mesh).material as THREE.ShaderMaterial).uniforms;
 
-it("enables Granada without enabling the remaining Earth-only cities", () => {
+it("gives Granada its own urban scene", () => {
   expect(sampleJourney(JOURNEY.anchors.granada).city?.sceneId).toBe("granada-sky");
-  expect(sampleJourney(JOURNEY.anchors.madrid).city).toBeNull();
 });
 
 it("models the Alhambra on the Sabika above the Darro, with Sierra Nevada rising behind", () => {
@@ -142,7 +141,7 @@ it("releases every owned GPU resource and its window listeners exactly once", as
 it("resolves normalized city anchors to stable visits despite floating-point round trips", () => {
   for (let i = 0; i < 5; i++) {
     const frame = sampleJourney(stopProgress(i) * JOURNEY.totalH);
-    expect(frame.phase.kind).toBe(i < 4 ? "visit" : "earth-visit");
+    expect(frame.phase.kind).toBe("visit");
     expect(frame.t).toBeCloseTo(0, 10);
   }
 });

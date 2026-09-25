@@ -1,8 +1,8 @@
 import { places } from "@/content/places";
 
 export type CityId = typeof places[number]["id"];
-export type CitySceneId = "st-louis-sky" | "granada-sky" | "brno-pixel" | "munich-mission";
-const scenes: Partial<Record<CityId, CitySceneId>> = { "st-louis": "st-louis-sky", granada: "granada-sky", brno: "brno-pixel", munich: "munich-mission" };
+export type CitySceneId = "st-louis-sky" | "granada-sky" | "brno-pixel" | "munich-mission" | "madrid-latent";
+const scenes: Partial<Record<CityId, CitySceneId>> = { "st-louis": "st-louis-sky", granada: "granada-sky", brno: "brno-pixel", munich: "munich-mission", madrid: "madrid-latent" };
 export type JourneyConfig = {
   introH: number;
   revealH: number;

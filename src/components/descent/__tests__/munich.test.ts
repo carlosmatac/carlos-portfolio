@@ -28,9 +28,8 @@ function project(point: THREE.Vector3, width: number, height: number) {
   return { x: (p.x + 1) / 2, y: (1 - p.y) / 2 };
 }
 
-it("gives Munich its own mission scene and leaves only Madrid on the Earth", () => {
+it("gives Munich its own mission scene", () => {
   expect(sampleJourney(JOURNEY.anchors.munich).city?.sceneId).toBe("munich-mission");
-  expect(sampleJourney(JOURNEY.anchors.madrid).city).toBeNull();
 });
 
 it("prints ten digits ordered by ink from a 5×7 font", () => {
