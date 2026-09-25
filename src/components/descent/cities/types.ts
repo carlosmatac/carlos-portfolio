@@ -1,4 +1,5 @@
 import type { PerspectiveCamera, Scene } from "three";
+import type { CloudVolume } from "../clouds/cloud-volume";
 import type { CitySceneId } from "../journey-config";
 
 export type CityFrame = {
@@ -15,6 +16,7 @@ export type CityScene = {
   readonly status: "loading" | "ready" | "error" | "disposed";
   scene: Scene;
   camera: PerspectiveCamera;
+  atmosphere: CloudVolume;
   update(frame: CityFrame): void;
   resize(width: number, height: number, quality: CityQuality): void;
   dispose(): void;

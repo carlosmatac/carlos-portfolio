@@ -5,8 +5,8 @@ import { compileJourney, JOURNEY, sampleJourney, travelSegments } from "../journ
 
 describe("Compiled journey", () => {
   it("derives ordered anchors, contiguous phases and length from a single configuration", () => {
-    expect(JOURNEY.totalH).toBeCloseTo(20);
-    expect(Object.keys(JOURNEY.anchors)).toEqual(places.map(place => place.id));
+    expect(JOURNEY.totalH).toBeCloseTo(20.6);
+    expect(Object.keys(JOURNEY.anchors)).toEqual(["earth", ...places.map(place => place.id)]);
     JOURNEY.phases.forEach((phase, i) => {
       expect(phase.endH - phase.startH).toBeCloseTo(phase.weightH);
       if (i) expect(phase.startH).toBe(JOURNEY.phases[i - 1].endH);
@@ -25,7 +25,7 @@ describe("Compiled journey", () => {
     expect(urban).toHaveLength(3);
     expect(urban.every(p => p.cityId === "st-louis")).toBe(true);
     const earthOnly = compileJourney({ ...journeyConfig, stops: journeyConfig.stops.map(s => ({ ...s, sceneId: null })) });
-    expect(earthOnly.totalH).toBeCloseTo(17);
+    expect(earthOnly.totalH).toBeCloseTo(17.6);
     expect(earthOnly.phases.some(p => p.kind === "arrival")).toBe(false);
     expect(earthOnly.anchors.madrid).toBeLessThan(JOURNEY.anchors.madrid);
   });
@@ -83,4 +83,19 @@ describe("Stateless sampling", () => {
     expect(segments).toEqual([{ from: transfer.startH / JOURNEY.totalH, to }]);
     expect(travelSegments(to, from)).toEqual([{ from: to, to: transfer.startH / JOURNEY.totalH }]);
   });
+});
+
+
+it("provides a stable Earth observation phase outside the guided travel segments", () => {
+  const earth = JOURNEY.anchors.earth / JOURNEY.totalH;
+  const city = JOURNEY.anchors[places[0].id] / JOURNEY.totalH;
+  for (const reduced of [false, true]) {
+    const frame = sampleJourney(JOURNEY.anchors.earth, JOURNEY, reduced);
+    expect(frame.phase.kind).toBe("earth-observe");
+    expect(frame.city).toBeNull();
+    expect(frame.blend).toBe(0);
+    expect(frame.earth.text).toBe(0);
+    expect(frame.earth.overview).toBe(1);
+  }
+  expect(travelSegments(earth, city)[0].from).toBeGreaterThan(earth);
 });

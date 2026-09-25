@@ -1,0 +1,41 @@
+{
+  "provenance": "Original procedural ellipsoid density field adapted from art-source/st-louis/build.py; no external assets",
+  "format": "Gzip-compressed RG8, x fastest, Y up; R extinction density, G directional light transmittance; linear data",
+  "rebuild": "node art-source/clouds/build-volume.mjs",
+  "bounds": [
+    [
+      -60,
+      -14,
+      -18
+    ],
+    [
+      60,
+      20,
+      18
+    ]
+  ],
+  "assets": [
+    {
+      "file": "cumulus-desktop.bin.gz",
+      "dimensions": [
+        256,
+        96,
+        96
+      ],
+      "bytes": 762806,
+      "decodedBytes": 4718592,
+      "sha256": "55c52380dfe2d57f66ee13f76a88495ee212464c413ea3ec1472b29eea988bc8"
+    },
+    {
+      "file": "cumulus-mobile.bin.gz",
+      "dimensions": [
+        128,
+        64,
+        64
+      ],
+      "bytes": 174504,
+      "decodedBytes": 1048576,
+      "sha256": "f84f58e4ee2fe4471654e58146ffa1fe3449f99ed214b344755cd840cb34d3db"
+    }
+  ]
+}

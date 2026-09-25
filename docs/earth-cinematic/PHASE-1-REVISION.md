@@ -1,5 +1,19 @@
 # Revisión de fase 1 — 24 de septiembre de 2026
 
+## Actualización posterior: contemplación y nubes
+
+La petición posterior de Carlos añade una parada estable `#earth` entre la intro y St. Louis. El primer gesto termina en la Tierra; otro gesto inicia el descenso. Esta actualización tiene prioridad sobre el comportamiento de la revisión original descrita debajo.
+
+- Las entradas y salidas urbanas comparten un paso por nubes: cambio de escena completamente oculto, sin crossfade Tierra/ciudad; ascenso al salir y trayectoria reversible.
+- Perfil urbano de 4.8 s: aceleración breve y frenada progresiva, con velocidad y aceleración nulas al final. La intro conserva 5.6 s y los viajes orbitales conservan su curva.
+- El arco de Blender y su encuadre se mantienen. Los bancos de nubes WebGL usan densidad e iluminación volumétricas, erosión de detalle y deriva lenta; las imágenes aprobadas quedan como fallback. Movimiento reducido elimina el túnel y la animación ambiental.
+- `journey-config.ts` incluye `observeH`; el sampler genera el anchor terrestre y omite ese intervalo de lectura durante los vuelos.
+- Regeneración de volúmenes: `node art-source/clouds/build-volume.mjs`. Dimensiones, bytes y hashes están en `art-source/clouds/assets.json`. El cargador limita el tamaño descomprimido y cancela descargas descartadas.
+- Verificación: `npm test -- --run`, `npx eslint src/components/descent art-source/clouds/build-volume.mjs`, `npm run build`. Los tests de shaders requieren además navegador con WebGL; los mocks unitarios no compilan GLSL.
+
+## Revisión original
+
+
 Carlos pidió corregir la Tierra pixelada y que un gesto fuerte no saltara varias ciudades. Esta petición posterior cambia la recomendación original de scroll completamente libre del plan: rueda, teclado de desplazamiento y gestos táctiles ahora conducen de una parada a la siguiente. No deshacer ese comportamiento al implementar fases posteriores.
 
 ## Comportamiento implementado

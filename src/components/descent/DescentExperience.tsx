@@ -3,8 +3,8 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import { places } from "@/content/places";
 import { site } from "@/content/site";
-import { journeyAt, smoothstep } from "./journey";
-import { JOURNEY, stopProgress } from "./journey-timeline";
+import { journeyAt } from "./journey";
+import { JOURNEY, EARTH_STOP, anchorProgress, stopProgress } from "./journey-timeline";
 import { damp } from "./motion";
 import { ST_LOUIS_ART, stLouisComposition } from "./cities/st-louis-art";
 import { adjacentStop, createFlight, flightPosition, WheelGesture, createSeek, seekFrame, type JourneySeek, type JourneyFlight } from "./scroll-journey";
@@ -68,8 +68,10 @@ export default function DescentExperience() {
         return;
       }
       if (Math.abs(progress - destination) < 0.0001) return;
-      if (explicit) seek = createSeek(progress, destination, performance.now());
-      else flight = createFlight(progress, destination, performance.now());
+      const adjacent = Math.abs(adjacentStop(progress, Math.sign(destination - progress)) - destination) < 1e-8;
+      const nextFlight = createFlight(progress, destination, performance.now());
+      if (explicit && !(adjacent && nextFlight.profile === "cloud")) seek = createSeek(progress, destination, performance.now());
+      else flight = nextFlight;
     }
     function busy() { return flight !== null || seek !== null; }
     function canGuide(event: Event) {
@@ -113,16 +115,16 @@ export default function DescentExperience() {
     function onNavigate(event: MouseEvent) {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href^="#"]') : null;
-      const index = places.findIndex(place => link?.hash === `#${place.id}`);
-      if (index < 0) return;
+      const destination = anchorProgress(link?.hash.slice(1) ?? "");
+      if (destination === undefined) return;
       event.preventDefault();
       history.replaceState(null, "", link!.hash);
-      moveTo(stopProgress(index), true);
+      moveTo(destination, true);
     }
 
     function onHashChange() {
-      const index = places.findIndex(place => location.hash === `#${place.id}`);
-      if (index >= 0) moveTo(stopProgress(index), true);
+      const destination = anchorProgress(location.hash.slice(1));
+      if (destination !== undefined) moveTo(destination, true);
     }
     function measure() {
       const previousHeight = pageHeight, previousTop = sectionTop;
@@ -194,14 +196,18 @@ export default function DescentExperience() {
       stage.dataset.cityBlend = frame.timeline.blend.toFixed(4);
       stage.dataset.position = progress.toFixed(6);
       stage.style.setProperty("--seek-opacity", seekOpacity.toFixed(4));
-      stage.dataset.stop = places[frame.earth.active].id;
+      const stopId = frame.timeline.phase.kind === "intro" ? "intro" : frame.earth.overview > 0 ? "earth" : places[frame.earth.active].id;
+      stage.dataset.stop = stopId;
       stage.style.setProperty("--identity-opacity", frame.identity.toFixed(4));
       stage.style.setProperty("--prompt-opacity", frame.prompt.toFixed(4));
       stage.style.setProperty("--fallback-zoom", `${1 + frame.zoom * 2.2}`);
       stage.style.setProperty("--screen-opacity", frame.screen.toFixed(4));
       stage.style.setProperty("--earth-opacity", frame.earth.visible.toFixed(4));
-      stage.style.setProperty("--city-opacity", frame.timeline.blend.toFixed(4));
-      stage.style.setProperty("--earth-intro", `${frame.earth.visible * (1 - (frame.timeline.introT < 1 ? 0 : frame.timeline.phase.kind === "earth-reveal" ? smoothstep(0, 0.5, frame.timeline.t) : 1))}`);
+      stage.style.setProperty("--city-opacity", String(Number(frame.timeline.passage?.scene === "city")));
+      stage.style.setProperty("--passage-opacity", (frame.timeline.passage?.cover ?? 0).toFixed(4));
+      stage.style.setProperty("--passage-y", `${((frame.timeline.passage?.depth ?? 0) - 0.5) * 70}%`);
+      stage.style.setProperty("--earth-intro", `${frame.earth.visible * frame.earth.overview * (1 - (frame.timeline.passage?.cover ?? 0))}`);
+      stage.style.setProperty("--shade-opacity", `${frame.earth.navigation * (1 - frame.earth.overview) * (1 - (frame.timeline.passage?.cover ?? 0))}`);
       stage.style.setProperty("--nav-opacity", frame.earth.navigation.toFixed(4));
       display.inert = frame.identity < 0.01;
       display.setAttribute("aria-hidden", String(frame.identity < 0.01));
@@ -212,8 +218,8 @@ export default function DescentExperience() {
         chapter.inert = opacity < 0.5;
         chapter.setAttribute("aria-hidden", String(opacity < 0.5));
       });
-      navigation.forEach((link,index)=>{
-        link.setAttribute("aria-current",index===frame.earth.active?"step":"false");
+      navigation.forEach(link=>{
+        link.setAttribute("aria-current",link.hash===`#${stopId}`?"step":"false");
         link.tabIndex=frame.earth.navigation>0.5?0:-1;
       });
       tourControls.forEach(control=>{
@@ -227,9 +233,9 @@ export default function DescentExperience() {
       }
     }
     measure(); progress = target;
-    const initialIndex = places.findIndex(place => location.hash === `#${place.id}`);
-    if (initialIndex >= 0) {
-      progress = target = stopProgress(initialIndex);
+    const initialDestination = anchorProgress(location.hash.slice(1));
+    if (initialDestination !== undefined) {
+      progress = target = initialDestination;
       writtenScroll = sectionTop + progress * pageHeight;
       window.scrollTo({ top: writtenScroll, behavior: "instant" });
     }
@@ -283,7 +289,7 @@ export default function DescentExperience() {
         <div className="fallback-monitor" aria-hidden="true"><div className="fallback-glow" /></div>
         <div className="monitor-identity" ref={identity}>
           <div className="identity-center"><span className="initials" aria-hidden="true">CM</span><h1>Carlos Mata</h1></div>
-          <a className="scroll-invitation" href="#st-louis">Scroll to discover<span className="scroll-stem" aria-hidden="true" /></a>
+          <a className="scroll-invitation" href="#earth">Scroll to discover<span className="scroll-stem" aria-hidden="true" /></a>
         </div>
         <div className="fallback-earth" aria-hidden="true" />
         <div className="fallback-city" aria-hidden="true">
@@ -294,6 +300,7 @@ export default function DescentExperience() {
         </div>
         <div className="earth-shade" aria-hidden="true" />
         <p className="earth-intro" aria-hidden="true">A few places that made me.</p>
+        <div className="fallback-passage" aria-hidden="true" />
         <div className="earth-story" ref={story}>
           {places.map((place,index)=>(
             <section className="earth-chapter" key={place.id} aria-labelledby={`${place.id}-title`} aria-hidden="true" inert>
@@ -309,12 +316,14 @@ export default function DescentExperience() {
           ))}
         </div>
         <nav className="journey-nav" aria-label="Places along the way" inert aria-hidden="true">
+          <a href="#earth" tabIndex={-1}><span className="journey-dot" aria-hidden="true" /><span>Earth</span></a>
           {places.map(place=><a key={place.id} href={`#${place.id}`} tabIndex={-1}><span className="journey-dot" aria-hidden="true" /><span>{place.city}</span></a>)}
         </nav>
         <div className="earth-footer" inert aria-hidden="true"><span>SCROLL TO TRAVEL</span><a href="/textures/earth/ATTRIBUTION.md" target="_blank" rel="noopener noreferrer">Earth imagery · Solar System Scope</a></div>
         <div className="scene-vignette" aria-hidden="true" />
         <div className="journey-seek" aria-hidden="true" />
       </div>
+      <div className="arrival-anchor" id="earth" style={{top:`calc((100% - 100svh) * ${EARTH_STOP})`}} aria-hidden="true" />
       {places.map((place,index)=><div key={place.id} className="arrival-anchor" id={place.id} style={{top:`calc((100% - 100svh) * ${stopProgress(index)})`}} aria-hidden="true" />)}
       <noscript><style>{`.descent-viewport{display:none}.descent-journey{height:auto!important}.noscript-story{padding:8vw;max-width:800px}.noscript-story section{margin:60px 0}`}</style><div className="noscript-story"><h1>Carlos Mata</h1>{places.map(place=><section key={place.id}><h2>{place.city} · {place.country}</h2><p>{place.period}</p><p>{place.description}</p></section>)}<a href={site.links.linkedin}>LinkedIn ↗</a></div></noscript>
     </main>

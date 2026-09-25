@@ -118,8 +118,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 [data-renderer="fallback"] .monitor-identity { transform: scale(var(--fallback-zoom)); }
 
 /* The globe is the scene; a single short chapter accompanies each landing. */
-.earth-intro { position: absolute; top: 12%; width: 100%; text-align: center; font-size: 13px; font-weight: 350; letter-spacing: .15em; color: #b1bbcd; opacity: var(--earth-intro, 0); pointer-events: none; }
-.earth-shade { position: absolute; inset: 0; background: linear-gradient(0deg, #030407c0, transparent 22%), linear-gradient(90deg, #030407e8, #03040750 34%, transparent 60%); opacity: var(--nav-opacity, 0); pointer-events: none; }
+.earth-intro { position: absolute; top: 6%; width: 100%; text-align: center; font-size: 13px; font-weight: 350; letter-spacing: .15em; color: #b1bbcd; opacity: var(--earth-intro, 0); pointer-events: none; }
+.earth-shade { position: absolute; inset: 0; background: linear-gradient(0deg, #030407c0, transparent 22%), linear-gradient(90deg, #030407e8, #03040750 34%, transparent 60%); opacity: var(--shade-opacity, 0); pointer-events: none; }
 .earth-story { position: absolute; z-index: 5; left: 8.5%; top: 50%; width: min(380px, 33%); transform: translateY(-50%); min-height: 410px; }
 .earth-chapter { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
 .earth-chapter:not([inert]) { pointer-events: auto; }
@@ -136,6 +136,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 .chapter-link { display: inline-flex; align-items: center; gap: 25px; padding: 10px 0; font-size: 13px; border-bottom: 1px solid #414957; margin-top: 10px; }
 .chapter-link:hover { border-color: #dbe5f5; }
 .journey-nav { position: absolute; z-index: 6; bottom: 9%; left: 50%; transform: translateX(-50%); display: flex; gap: 34px; opacity: var(--nav-opacity, 0); }
+.descent-viewport::after { content: ""; position: absolute; inset: 0; z-index: 5; background: linear-gradient(0deg, #030407 0 16%, transparent 34%); opacity: var(--passage-opacity, 0); pointer-events: none; }
 .journey-nav a { display: flex; align-items: center; gap: 9px; white-space: nowrap; font-size: 12px; color: #9aa6b8; min-height: 44px; transition: color .3s; }
 .journey-dot { display: block; width: 4px; height: 4px; border-radius: 50%; background: #4c586b; transition: background .3s, box-shadow .3s; }
 .journey-nav a[aria-current="step"] { color: #e1e5ed; }
@@ -205,3 +206,16 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
   .descent-journey { height: var(--journey-reduced-height, 900svh); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+[data-stop="earth"] .fallback-earth { left: 50%; top: 50%; width: min(74svh, 86vw); transform: translate(-50%, -50%); }
+
+.fallback-passage { display: none; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: var(--passage-opacity, 0); background: #3a4658 url('/images/cities/st-louis/cloud-bank-mobile.webp') center var(--passage-y, 50%) / 160% auto repeat-x; }
+[data-renderer="fallback"][data-phase="arrival"] .fallback-passage,
+[data-renderer="fallback"][data-phase="departure"] .fallback-passage,
+[data-city-asset="loading"][data-phase="arrival"] .fallback-passage,
+[data-city-asset="loading"][data-phase="departure"] .fallback-passage,
+[data-city-asset="error"][data-phase="arrival"] .fallback-passage,
+[data-city-asset="error"][data-phase="departure"] .fallback-passage,
+[data-renderer="fallback"][data-phase="earth-observe"] .fallback-city,
+[data-city-asset="loading"] .fallback-city,
+[data-city-asset="error"] .fallback-city { display: block; }

@@ -5,6 +5,7 @@ export type CitySceneId = "st-louis-sky";
 export type JourneyConfig = {
   introH: number;
   revealH: number;
+  observeH: number;
   arrivalH: number;
   visitH: number;
   departureH: number;
@@ -16,6 +17,7 @@ export type JourneyConfig = {
 export const journeyConfig: JourneyConfig = {
   introH: 4.25,
   revealH: 1.19,
+  observeH: 0.6,
   arrivalH: 1.8,
   visitH: 0.4,
   departureH: 1.2,

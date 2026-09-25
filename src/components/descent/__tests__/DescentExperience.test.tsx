@@ -262,3 +262,54 @@ describe("Timeline navigation and lifecycle", () => {
     expect(sceneMock.render).toHaveBeenCalledTimes(calls);
   });
 });
+
+
+describe("Earth observation stop", () => {
+  it("lands on Earth after the first gesture and waits for another deliberate gesture", async () => {
+    scrollY = 0;
+    const { stage, container } = await mount();
+    fireEvent.wheel(window, { deltaY: 14000 }); advance(6000);
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+    expect(stage.getAttribute("data-phase")).toBe("earth-observe");
+    expect(stage.getAttribute("data-city-blend")).toBe("0.0000");
+    expect(container.querySelector('[aria-labelledby="st-louis-title"]')?.getAttribute("aria-hidden")).toBe("true");
+    expect(container.querySelector('.journey-nav a[href="#earth"]')?.getAttribute("aria-current")).toBe("step");
+    advance(10000);
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+    fireEvent.wheel(window, { deltaY: 100 }); advance(6000);
+    expect(stage.getAttribute("data-stop")).toBe("st-louis");
+    fireEvent.wheel(window, { deltaY: -100 }); advance(6000);
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+  });
+
+  it("supports the Earth anchor, keyboard and an intro link that does not skip Earth", async () => {
+    history.replaceState(null, "", "#earth");
+    const { stage, container } = await mount();
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+    expect(container.querySelector('.scroll-invitation')?.getAttribute("href")).toBe("#earth");
+    fireEvent.keyDown(window, { key: "ArrowDown" }); advance(6000);
+    expect(stage.getAttribute("data-stop")).toBe("st-louis");
+    fireEvent.keyDown(window, { key: "ArrowUp" }); advance(6000);
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+    history.replaceState(null, "", "#constructor");
+    fireEvent(window, new Event("hashchange")); advance(600);
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+  });
+});
+
+
+it("flies through clouds for adjacent Earth/city links instead of using the direct-seek fade", async () => {
+  history.replaceState(null, "", "#earth");
+  const { stage, container } = await mount();
+  fireEvent.click(container.querySelector('.journey-nav a[href="#st-louis"]')!);
+  advance(500);
+  expect(stage.getAttribute("data-travelling")).toBe("true");
+  expect((stage as HTMLElement).style.getPropertyValue("--seek-opacity")).toBe("0.0000");
+  expect(stage.getAttribute("data-phase")).toBe("arrival");
+  advance(5000);
+  expect(stage.getAttribute("data-stop")).toBe("st-louis");
+  fireEvent.click(container.querySelector('.journey-nav a[href="#earth"]')!); advance(500);
+  expect((stage as HTMLElement).style.getPropertyValue("--seek-opacity")).toBe("0.0000");
+  advance(5000);
+  expect(stage.getAttribute("data-stop")).toBe("earth");
+});

@@ -2,10 +2,13 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { JourneyFrame } from "./journey";
 import { createEarth } from "./create-earth";
-import { earthFraming } from "./motion";
+import { earthCameraDistance, earthFraming, smootherRange } from "./motion";
 import { createStLouis } from "./cities/create-st-louis";
-import type { CityScene } from "./cities/types";
+import type { CitySceneId } from "./journey-config";
+import type { CityScene, CityQuality } from "./cities/types";
 import { createTransition } from "./transitions/create-transition";
+
+const cityFactories = { "st-louis-sky": createStLouis } satisfies Record<CitySceneId, (quality: CityQuality) => CityScene>;
 
 export interface DescentScene {
   render: (frame: JourneyFrame, seconds: number, reduced: boolean) => void;
@@ -135,7 +138,7 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
 
   const transition = createTransition(renderer);
   let city: CityScene | null = null;
-  let cityReadyAt: number | null = null;
+  let cityPrepared = false;
   function resizeCity() {
     city?.resize(width, height, width < 700 ? "mobile" : "desktop");
   }
@@ -153,7 +156,7 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
       camera.updateProjectionMatrix();
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 700 ? 1.5 : 2));
       renderer.setSize(width, height);
-      transition.resize(width, height, Math.min(renderer.getPixelRatio(), width < 700 ? 1 : 1.5));
+      transition.resize(width, height, Math.min(renderer.getPixelRatio(), 1.5));
       resizeCity();
     },
     render(frame, seconds, reduced) {
@@ -194,27 +197,39 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
       earth.update(frame.earth, seconds, reduced);
       const framing = earthFraming(width, height);
       if (frame.timeline.introT >= 1) {
-        const approach = THREE.MathUtils.lerp(18, framing.visitDistance, frame.earth.landing);
-        const distance = THREE.MathUtils.lerp(approach, framing.transitDistance, frame.earth.altitude);
+        const overviewDistance = earthCameraDistance(Math.min(0.74, 0.86 * width / height));
+        const near = THREE.MathUtils.lerp(framing.visitDistance, overviewDistance, frame.earth.overview);
+        const approach = THREE.MathUtils.lerp(18, near, frame.earth.landing);
+        const orbit = THREE.MathUtils.lerp(approach, framing.transitDistance, frame.earth.altitude);
+        const dive = !reduced && frame.timeline.passage ? smootherRange(0, 0.4, frame.timeline.passage.depth) : 0;
+        const distance = THREE.MathUtils.lerp(orbit, 3.7, dive);
         camera.position.copy(earth.root.position).add(new THREE.Vector3(0, 0, distance));
         camera.lookAt(earth.root.position);
       }
-      const placed = frame.earth.landing;
-      camera.setViewOffset(width, height, framing.offsetX * placed, framing.offsetY * placed, width, height);
+      const placed = frame.earth.landing * (1 - frame.earth.overview);
+      camera.setViewOffset(width, height, framing.offsetX * placed, framing.offsetY * placed + (width >= 700 ? height * 0.015 * frame.earth.overview : 0), width, height);
       camera.updateMatrixWorld();
       const cityFrame = frame.timeline.city;
-      const preload = frame.timeline.phase.kind === "earth-reveal" && frame.timeline.phase.sceneId === "st-louis-sky";
-      if ((cityFrame || preload) && !city) {
-        city = createStLouis(width < 700 ? "mobile" : "desktop");
-        cityReadyAt = null;
-        resizeCity();
-      } else if (!cityFrame && !preload && city) {
-        city.dispose(); city = null; cityReadyAt = null;
+      const phase = frame.timeline.phase;
+      const preload = ["earth-reveal", "earth-observe"].includes(phase.kind) ? phase.sceneId
+        : phase.kind === "transfer" ? frame.timeline.t < 0.3 ? phase.sceneId : frame.timeline.t > 0.7 ? phase.nextSceneId : null : null;
+      const sceneId = cityFrame?.sceneId ?? preload;
+      if (city && city.id !== sceneId) {
+        city.dispose(); city = null; cityPrepared = false;
       }
-      if (cityFrame && frame.timeline.blend > 0) city?.update({ ...cityFrame, ambientSeconds: seconds, reduced });
-      if (city?.status === "ready" && cityReadyAt === null) cityReadyAt = seconds;
-      const readiness = cityReadyAt === null ? 0 : reduced ? 1 : Math.min(1, Math.max(0, (seconds - cityReadyAt) / 0.35));
-      transition.render(scene, camera, city?.scene ?? null, city?.camera ?? null, frame.timeline.blend * readiness);
+      if (sceneId && !city) {
+        city = cityFactories[sceneId](width < 700 ? "mobile" : "desktop");
+        resizeCity();
+      }
+      city?.update({ ...(cityFrame ?? { arrivalT: 1, visitT: 0, departureT: 0 }), ambientSeconds: seconds, reduced });
+      if (city?.status === "ready" && !cityPrepared) {
+        transition.prepare(city.scene, city.camera);
+        cityPrepared = true;
+      }
+      if (host.parentElement) host.parentElement.dataset.cityAsset = city?.status ?? "inactive";
+      const ready = city?.status === "ready" ? city : null;
+      transition.render(scene, camera, ready?.scene ?? null, ready?.camera ?? null,
+        frame.timeline.passage, ready?.atmosphere ?? null, seconds, reduced);
     },
     dispose() {
       canvas.removeEventListener("webglcontextlost", contextLost);

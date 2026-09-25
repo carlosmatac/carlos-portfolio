@@ -1,9 +1,10 @@
-import { stopProgress, travelSegments, type TravelSegment } from "./journey-timeline";
+import { JOURNEY, EARTH_STOP, stopProgress, travelSegments, type TravelSegment } from "./journey-timeline";
 import { places } from "@/content/places";
 import { flightEase } from "./motion";
+import { cloudFlightEase } from "./transitions/cloud-passage";
 
 // The first gesture enters the screen and lands; later gestures visit one city.
-export const JOURNEY_STOPS = [0, ...places.map((_, i) => stopProgress(i))];
+export const JOURNEY_STOPS = [0, EARTH_STOP, ...places.map((_, i) => stopProgress(i))];
 export const GESTURE_GAP_MS = 280;
 
 export function adjacentStop(position: number, direction: number) {
@@ -43,13 +44,15 @@ export class WheelGesture {
   }
 }
 
-export type JourneyFlight = { from: number; to: number; started: number; duration: number; segments: TravelSegment[] };
+export type JourneyFlight = { from: number; to: number; started: number; duration: number; profile: "orbit" | "cloud"; segments: TravelSegment[] };
 
 export function createFlight(from: number, to: number, now: number): JourneyFlight {
   // Duration depends on the journey, never on the force of the wheel event.
   const low = Math.min(from, to), high = Math.max(from, to);
-  const duration = low < stopProgress(0) - 0.001 || JOURNEY_STOPS.some(stop => stop > low + 0.001 && stop < high - 0.001) ? 5600 : 4800;
-  return { from, to, started: now, duration, segments: travelSegments(from, to) };
+  const duration = low < EARTH_STOP - 0.001 || JOURNEY_STOPS.some(stop => stop > low + 0.001 && stop < high - 0.001) ? 5600 : 4800;
+  const urban = JOURNEY.phases.some(p => ["arrival", "departure"].includes(p.kind)
+    && p.endH / JOURNEY.totalH > low + 1e-8 && p.startH / JOURNEY.totalH < high - 1e-8);
+  return { from, to, started: now, duration, profile: urban ? "cloud" : "orbit", segments: travelSegments(from, to) };
 }
 
 export function flightPosition(flight: JourneyFlight, now: number) {
@@ -58,7 +61,7 @@ export function flightPosition(flight: JourneyFlight, now: number) {
   if (t === 1) return flight.to;
   const distance = flight.segments.reduce((sum, s) => sum + Math.abs(s.to - s.from), 0);
   if (!distance) return flight.to;
-  let remaining = distance * flightEase(t);
+  let remaining = distance * (flight.profile === "cloud" ? cloudFlightEase(t) : flightEase(t));
   for (const segment of flight.segments) {
     const length = Math.abs(segment.to - segment.from);
     if (remaining <= length) return segment.from + Math.sign(segment.to - segment.from) * remaining;

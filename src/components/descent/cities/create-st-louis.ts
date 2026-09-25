@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { createCloudVolume } from "../clouds/cloud-volume";
+import { createCloudBank } from "../clouds/create-cloud-bank";
 import type { CityFrame, CityQuality, CityScene } from "./types";
 import { ST_LOUIS_ART, stLouisComposition } from "./st-louis-art";
 
@@ -27,7 +29,7 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
     return texture;
   }
   const archTexture = load(ST_LOUIS_ART[quality].arch);
-  const cloudTexture = load(ST_LOUIS_ART[quality].clouds);
+  const atmosphere = createCloudVolume(quality);
   const backdrop = new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false,
     uniforms: { focus: { value: new THREE.Vector2(0.7, 0.65) }, aspect: { value: 1 } },
@@ -50,15 +52,6 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
   sky.frustumCulled = false;
   sky.renderOrder = -100;
   root.add(sky);
-  function plate(name: string, map: THREE.Texture, color: number, opacity: number, depth: number, order: number) {
-    const material = new THREE.MeshBasicMaterial({ map, color, opacity, transparent: true, depthWrite: false, alphaTest: 0.002 });
-    const object = new THREE.Mesh(geometry, material);
-    object.name = name;
-    object.position.z = depth;
-    object.renderOrder = order;
-    root.add(object);
-    return object;
-  }
   const archMaterial = new THREE.ShaderMaterial({
     uniforms: { map: { value: archTexture } }, transparent: true, depthWrite: false,
     vertexShader: `varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
@@ -77,10 +70,19 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
   arch.renderOrder = 1;
   root.add(arch);
   const clouds = [
-    plate("Clouds_Background", cloudTexture, 0x748bb7, 0.5, -14, 0),
-    plate("Clouds_Foreground", cloudTexture, 0xa8b7d5, 1, 18, 2),
-    plate("Clouds_Near_Veil", cloudTexture, 0x637089, 0.78, 30, 3),
-  ];
+    { name: "Clouds_Background", depth: -60, order: 0, tint: [0.6, 0.72, 0.95], strength: 0.55 },
+    { name: "Clouds_Foreground", depth: 38, order: 2, tint: [0.95, 0.98, 1], strength: 1 },
+    { name: "Clouds_Near_Veil", depth: 65, order: 3, tint: [0.4, 0.46, 0.6], strength: 0.7 },
+  ].map(layer => {
+    const bank = createCloudBank(atmosphere, quality);
+    bank.mesh.name = layer.name;
+    bank.mesh.position.z = layer.depth;
+    bank.mesh.renderOrder = layer.order;
+    bank.mesh.material.uniforms.tint.value.fromArray(layer.tint);
+    bank.mesh.material.uniforms.strength.value = layer.strength;
+    root.add(bank.mesh);
+    return bank;
+  });
   let width = 1, height = 1;
   let composition = stLouisComposition(width, height);
   let current: CityFrame = { arrivalT: 1, visitT: 0, departureT: 0, ambientSeconds: 0, reduced: false };
@@ -88,22 +90,24 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
     return 2 * (CAMERA_Z - depth) * Math.tan(THREE.MathUtils.degToRad(FOV / 2));
   }
   const api: CityScene = {
-    id: "st-louis-sky", assetStage: "render", scene, camera,
-    get status() { return disposed ? "disposed" : failed ? "error" : loaded === 2 ? "ready" : "loading"; },
+    id: "st-louis-sky", assetStage: "render", scene, camera, atmosphere,
+    get status() { return disposed ? "disposed" : failed || atmosphere.status === "error" ? "error" : loaded === 1 && atmosphere.status === "ready" ? "ready" : "loading"; },
     update(frame) {
       current = frame;
       const arrival = frame.reduced ? 0 : 1 - frame.arrivalT, departure = frame.reduced ? 0 : frame.departureT;
-      camera.position.set(0, 0, CAMERA_Z + arrival * 20 + departure * 24);
-      camera.lookAt(0, 0, 0);
+      const elevation = arrival + departure;
+      camera.position.set(0, elevation * 60, CAMERA_Z + elevation * 18);
+      camera.lookAt(0, camera.position.y, 0);
       camera.updateMatrixWorld();
-      clouds.forEach((cloud, index) => {
-        const layout = composition.clouds[index];
-        const drift = frame.reduced ? 0 : (Math.sin(frame.ambientSeconds * 0.045 + index * 1.7) - Math.sin(index * 1.7)) * 0.006;
+      clouds.forEach((bank, index) => {
+        const cloud = bank.mesh, layout = composition.clouds[index];
+        const drift = frame.reduced ? 0 : (Math.sin(frame.ambientSeconds * 0.055 + index * 1.7) - Math.sin(index * 1.7)) * 0.012;
         const h = viewHeight(cloud.position.z);
         cloud.position.x = (layout.x - 0.5 + drift) * h * camera.aspect;
+        bank.update(frame.ambientSeconds, frame.reduced);
       });
     },
-    resize(w, h) {
+    resize(w, h, quality) {
       width = Math.max(1, w); height = Math.max(1, h);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
@@ -111,11 +115,12 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
       const view = viewHeight(0), layout = composition.arch;
       arch.scale.set(view * layout.height * ST_LOUIS_ART.archAspect, view * layout.height, 1);
       arch.position.set((layout.x - 0.5) * view * camera.aspect, (0.5 - layout.y) * view, 0);
-      clouds.forEach((cloud, index) => {
-        const layer = composition.clouds[index], layerView = viewHeight(cloud.position.z);
+      clouds.forEach((bank, index) => {
+        const cloud = bank.mesh, layer = composition.clouds[index], layerView = viewHeight(cloud.position.z);
         const layerWidth = layerView * camera.aspect * layer.width;
-        cloud.scale.set(layerWidth * (index === 2 ? -1 : 1), layerWidth / 2, 1);
+        cloud.scale.set(layerWidth * (index === 2 ? -1 : 1), layerWidth * 34 / 120, layerWidth * 36 / 120);
         cloud.position.y = (0.5 - layer.y) * layerView;
+        bank.resize(quality);
       });
       backdrop.uniforms.focus.value.set(layout.x, 1 - layout.y + 0.1);
       backdrop.uniforms.aspect.value = camera.aspect;
@@ -125,7 +130,8 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
       if (disposed) return;
       disposed = true;
       geometry.dispose(); backdrop.dispose();
-      arch.material.dispose(); clouds.forEach(cloud => cloud.material.dispose());
+      arch.material.dispose(); clouds.forEach(bank => bank.dispose());
+      atmosphere.dispose();
       textures.forEach(texture => texture.dispose());
       scene.clear();
     },
