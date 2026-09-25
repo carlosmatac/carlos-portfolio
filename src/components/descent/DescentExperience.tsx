@@ -7,6 +7,7 @@ import { journeyAt } from "./journey";
 import { JOURNEY, EARTH_STOP, anchorProgress, stopProgress } from "./journey-timeline";
 import { damp } from "./motion";
 import { ST_LOUIS_ART, stLouisComposition } from "./cities/st-louis-art";
+import { LOGO } from "./intro-logo-art";
 import { adjacentStop, createFlight, flightPosition, WheelGesture, createSeek, seekFrame, type JourneySeek, type JourneyFlight } from "./scroll-journey";
 import type { DescentScene } from "./create-descent";
 
@@ -201,8 +202,7 @@ export default function DescentExperience() {
       stage.dataset.city = frame.timeline.city?.id ?? "";
       stage.style.setProperty("--identity-opacity", frame.identity.toFixed(4));
       stage.style.setProperty("--prompt-opacity", frame.prompt.toFixed(4));
-      stage.style.setProperty("--fallback-zoom", `${1 + frame.zoom * 2.2}`);
-      stage.style.setProperty("--screen-opacity", frame.screen.toFixed(4));
+      stage.style.setProperty("--logo-opacity", frame.logo.toFixed(4));
       stage.style.setProperty("--earth-opacity", frame.earth.visible.toFixed(4));
       stage.style.setProperty("--city-opacity", String(Number(frame.timeline.passage?.scene === "city")));
       stage.style.setProperty("--passage-opacity", (frame.timeline.passage?.cover ?? 0).toFixed(4));
@@ -254,16 +254,14 @@ export default function DescentExperience() {
     raf = requestAnimationFrame(draw);
     import("./create-descent").then(({ createDescent }) => {
       if (disposed || !host.current) return;
-      scene = createDescent(host.current, display, () => {
+      scene = createDescent(host.current, () => {
         stage.dataset.renderer = "fallback";
         scene?.dispose(); scene = null;
-        display.removeAttribute("style");
       });
       scene.render(journeyAt(progress, reduced.matches), performance.now() / 1000, reduced.matches);
       stage.dataset.renderer = "webgl";
     }).catch(() => {
       stage.dataset.renderer = "fallback";
-      display.removeAttribute("style");
     });
     return () => {
       disposed = true; cancelAnimationFrame(raf);
@@ -285,12 +283,13 @@ export default function DescentExperience() {
       "--journey-height": `${(JOURNEY.totalH + 1) * 100}svh`,
       "--journey-reduced-height": `${(JOURNEY.totalH / 2 + 1) * 100}svh`,
     } as CSSProperties}>
-      <div className="descent-viewport" ref={viewport} data-renderer="fallback" data-phase="monitor">
+      <div className="descent-viewport" ref={viewport} data-renderer="fallback" data-phase="intro">
         <div className="descent-canvas" ref={host} />
-        <div className="fallback-monitor" aria-hidden="true"><div className="fallback-glow" /></div>
-        <div className="monitor-identity" ref={identity}>
-          <div className="identity-center"><span className="initials" aria-hidden="true">CM</span><h1>Carlos Mata</h1></div>
-          <a className="scroll-invitation" href="#earth">Scroll to discover<span className="scroll-stem" aria-hidden="true" /></a>
+        <svg className="intro-logo" viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
+        <div className="intro-identity" ref={identity}>
+          <h1>Carlos Mata</h1>
+          <p className="intro-role">{site.headlineTop}</p>
+          <a className="scroll-invitation" href="#earth">Scroll to start the journey<span className="scroll-stem" aria-hidden="true" /></a>
         </div>
         <div className="fallback-earth" aria-hidden="true" />
         <div className="fallback-city" aria-hidden="true">

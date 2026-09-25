@@ -72,7 +72,7 @@ export function sampleJourney(positionH: number, timeline = JOURNEY, reduced = f
   // Spread rotation across the flight instead of whipping round in its middle.
   const turn = kind === "transfer" ? smootherRange(0.12, 0.92, t) : 0;
   const active = turn < 0.5 ? from : to;
-  const visible = smoothstep(0.7, 0.96, introT);
+  const visible = smoothstep(0.46, 0.94, introT);
   const navigation = kind === "intro" ? 0 : kind === "earth-reveal" ? smoothstep(0, 0.5, t) : 1;
   const landing = kind === "intro" ? 0 : kind === "earth-reveal" ? smootherstep(t) : 1;
   const overview = kind === "earth-reveal" ? smootherstep(t) : kind === "earth-observe" ? 1

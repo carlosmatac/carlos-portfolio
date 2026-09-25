@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { JourneyFrame } from "./journey";
 import { createEarth } from "./create-earth";
 import { earthCameraDistance, earthFraming, smootherRange } from "./motion";
@@ -11,6 +10,10 @@ import { createStLouis } from "./cities/create-st-louis";
 import type { CitySceneId } from "./journey-config";
 import type { CityScene, CityQuality } from "./cities/types";
 import { createTransition } from "./transitions/create-transition";
+import { createIntroLogo } from "./intro-logo";
+import { trackPointer } from "./cities/pointer";
+
+const BASE_FOV = 42, START_Z = 10;
 
 const cityFactories = { "st-louis-sky": createStLouis, "granada-sky": createGranada, "brno-pixel": createBrno, "munich-mission": createMunich, "madrid-latent": createMadrid } satisfies Record<CitySceneId, (quality: CityQuality) => CityScene>;
 
@@ -20,8 +23,8 @@ export interface DescentScene {
   dispose: () => void;
 }
 
-/** The monitor, tunnel and final object occupy one continuous 3D space. */
-export function createDescent(host: HTMLElement, identity: HTMLElement, onContextLost: () => void): DescentScene {
+/** The logo, the warp tunnel and the Earth occupy one continuous 3D space. */
+export function createDescent(host: HTMLElement, onContextLost: () => void): DescentScene {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.5 : 2));
   renderer.setClearColor(0x030407, 0);
@@ -31,71 +34,18 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
   canvas.setAttribute("aria-hidden", "true");
   host.appendChild(canvas);
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.04, 650);
-  const cameraTarget = new THREE.Vector3();
-  let width = 1, height = 1, startZ = 10.3;
+  const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.04, 650);
+  const cameraTarget = new THREE.Vector3(), up = new THREE.Vector3();
+  let width = 1, height = 1, lastSeconds = 0;
 
   scene.add(new THREE.HemisphereLight(0xb2c0e4, 0x101119, 1.05));
-  const key = new THREE.DirectionalLight(0xd7ddec, 3.4);
-  key.position.set(-4, 7, 5);
-  scene.add(key);
-  const rim = new THREE.DirectionalLight(0x435888, 1.4);
-  rim.position.set(5, 1, -3);
-  scene.add(rim);
-  const monitor = new THREE.Group();
-  scene.add(monitor);
-  const graphite = new THREE.MeshStandardMaterial({ color: 0x262930, roughness: 0.35, metalness: 0.35 });
-  const aluminum = new THREE.MeshStandardMaterial({ color: 0x353941, roughness: 0.42, metalness: 0.38 });
-  const black = new THREE.MeshStandardMaterial({ color: 0x050609, roughness: 0.35, metalness: 0.12 });
-  function box(parent: THREE.Object3D, size: [number, number, number], position: [number, number, number], material: THREE.Material, radius = 0.05) {
-    const mesh = new THREE.Mesh(new RoundedBoxGeometry(...size, 3, radius), material);
-    mesh.position.set(...position);
-    parent.add(mesh);
-    return mesh;
-  }
-  // A real beveled housing, recessed display and graphite stand; no image assets.
-  box(monitor, [9.48, 5.48, 0.19], [0, 0.55, -0.075], graphite, 0.095);
-  box(monitor, [9.34, 5.34, 0.035], [0, 0.57, 0.035], black, 0.055);
-  const screenUniforms = { uTime: { value: 0 }, uOpacity: { value: 1 }, uReduced: { value: 0 } };
-  const screenMaterial = new THREE.ShaderMaterial({
-    uniforms: screenUniforms,
-    transparent: true,
-    depthWrite: false,
-    vertexShader: `varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-    fragmentShader: `
-      varying vec2 vUv;
-      uniform float uTime; uniform float uOpacity; uniform float uReduced;
-      void main(){
-        vec2 uv=vUv-vec2(0.5,0.44);
-        float pulse=mix(0.57+0.20*sin(uTime*0.36),0.65,uReduced);
-        float halo=exp(-length(uv*vec2(1.55,2.3))*4.8);
-        float low=exp(-length((vUv-vec2(0.5,0.10))*vec2(2.4,5.0))*5.5);
-        vec3 color=vec3(0.012,0.014,0.023)+vec3(0.040,0.075,0.25)*halo*pulse;
-        color+=vec3(0.009,0.013,0.035)*low;
-        float vignette=1.0-smoothstep(0.22,0.72,length(vUv-0.5));
-        color*=0.64+0.36*vignette;
-        gl_FragColor=vec4(color,uOpacity);
-      }`,
-  });
-  const display = new THREE.Mesh(new THREE.PlaneGeometry(9.13, 5.13), screenMaterial);
-  display.position.set(0, 0.57, 0.06);
-  monitor.add(display);
-  // The inner black backing fades with the display so the camera can enter it.
-  const backing = monitor.children[1] as THREE.Mesh;
-  backing.material = black.clone();
-  (backing.material as THREE.MeshStandardMaterial).transparent = true;
-  const stem = box(monitor, [1.5, 1.66, 0.20], [0, -2.9, -0.38], aluminum, 0.07);
-  stem.rotation.x = -0.10;
-  box(monitor, [2.68, 0.10, 1.62], [0, -3.68, 0.05], aluminum, 0.055);
-  box(monitor, [2.35, 0.035, 1.32], [0, -3.75, 0.04], black, 0.025);
-  const led = new THREE.Mesh(new THREE.SphereGeometry(0.013, 8, 6), new THREE.MeshBasicMaterial({ color: 0x9aa8c5 }));
-  led.position.set(4.28, -2.06, 0.037);
-  monitor.add(led);
+  const logo = createIntroLogo(scene, window.innerWidth < 700);
+  const cursor = trackPointer();
 
-  // Deterministic stars with real perspective and depth; trails follow the fall.
+  // Deterministic stars along the fall with real perspective; their trails stretch with speed.
   const tunnel = new THREE.Group();
   scene.add(tunnel);
-  const count = window.innerWidth < 700 ? 900 : 1700;
+  const count = window.innerWidth < 700 ? 1600 : 3200;
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
   const linePositions = new Float32Array(count * 6);
@@ -104,23 +54,24 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
   let seed = 8128;
   const random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   for (let i = 0; i < count; i++) {
-    const z = -4 - random() * 340;
+    const z = -2 - Math.pow(random(), 0.7) * 360;
     const angle = random() * Math.PI * 2;
-    const radius = 2.5 + Math.pow(random(), 0.75) * 68;
+    const radius = 1.6 + Math.pow(random(), 0.8) * 64;
     const x = Math.cos(angle) * radius;
     const y = z * 0.354 + Math.sin(angle) * radius;
-    const intensity = 0.38 + random() * 0.62;
+    const intensity = 0.4 + random() * 0.6, hue = random();
+    const tint = hue < 0.16 ? [0.75, 0.55, 1] : hue < 0.26 ? [1, 0.78, 0.5] : [0.78, 0.86, 1];
     const point = [x, y, z];
-    const color = [intensity * 0.77, intensity * 0.85, intensity];
+    const color = tint.map(c => c * intensity);
     positions.set(point, i * 3); colors.set(color, i * 3);
     linePositions.set(point, i * 6); linePositions.set(point, i * 6 + 3);
-    lineColors.set(color, i * 6); lineColors.set(color.map(c => c * 0.08), i * 6 + 3);
+    lineColors.set(color, i * 6); lineColors.set(color.map(c => c * 0.05), i * 6 + 3);
     ends[i * 2 + 1] = 1;
   }
   const pointGeometry = new THREE.BufferGeometry();
   pointGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   pointGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  const pointsMaterial = new THREE.PointsMaterial({ size: 0.065, vertexColors: true, transparent: true, opacity: 0, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const pointsMaterial = new THREE.PointsMaterial({ size: 0.07, vertexColors: true, transparent: true, opacity: 0, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const stars = new THREE.Points(pointGeometry, pointsMaterial);
   tunnel.add(stars);
   const lineGeometry = new THREE.BufferGeometry();
@@ -132,7 +83,7 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
     uniforms: trailUniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: `attribute float aEnd;attribute vec3 color;varying vec3 vColor;uniform float uLength;
       void main(){vColor=color;vec3 p=position;p.z-=aEnd*uLength;p.y-=aEnd*uLength*0.354;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,
-    fragmentShader: `varying vec3 vColor;uniform float uOpacity;void main(){gl_FragColor=vec4(vColor,uOpacity);}`,
+    fragmentShader: `varying vec3 vColor;uniform float uOpacity;void main(){gl_FragColor=vec4(vColor*1.7,uOpacity);}`,
   });
   const trails = new THREE.LineSegments(lineGeometry, trailMaterial);
   trails.frustumCulled = false;
@@ -147,57 +98,39 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
     city?.resize(width, height, width < 700 ? "mobile" : "desktop");
   }
 
-  const projected = new THREE.Vector3();
-  const displayTopLeft = new THREE.Vector3(-4.565, 3.135, 0.06);
-  const displayBottomRight = new THREE.Vector3(4.565, -1.995, 0.06);
-  let previousBounds = "";
   const api: DescentScene = {
     resize() {
       width = host.clientWidth; height = host.clientHeight;
       if (!width || !height) return;
       camera.aspect = width / height;
-      startZ = Math.max(10.3, 9.48 / (2 * Math.tan(THREE.MathUtils.degToRad(21)) * camera.aspect * 0.88));
+      camera.fov = BASE_FOV;
       camera.updateProjectionMatrix();
+      logo.resize(width, height, camera, START_Z);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 700 ? 1.5 : 2));
       renderer.setSize(width, height);
       transition.resize(width, height, Math.min(renderer.getPixelRatio(), 1.5));
       resizeCity();
     },
     render(frame, seconds, reduced) {
+      const dt = Math.min(0.1, Math.max(0, seconds - lastSeconds));
+      lastSeconds = seconds;
       camera.clearViewOffset();
-      const zoomZ = THREE.MathUtils.lerp(startZ, 0.9, frame.zoom);
-      camera.position.set(0, THREE.MathUtils.lerp(-0.12, 0.57, frame.zoom) - frame.distance * 85, zoomZ - frame.distance * 240);
-      const pitch = Math.sin(frame.fall * Math.PI) * 0.24;
+      // Push into the logo, then fall along the tunnel; the lens widens and rolls slightly at full warp.
+      const warp = reduced ? 0 : frame.speed * frame.stars;
+      camera.fov = BASE_FOV + 20 * warp;
+      camera.updateProjectionMatrix();
+      camera.position.set(0, THREE.MathUtils.lerp(0, 0.57, frame.zoom) - frame.distance * 85, THREE.MathUtils.lerp(START_Z, 0.9, frame.zoom) - frame.distance * 240);
+      const pitch = Math.sin(frame.fall * Math.PI) * 0.24, roll = reduced ? 0 : Math.sin(frame.fall * Math.PI) * 0.16 * Math.sin(frame.fall * Math.PI * 1.5);
       cameraTarget.copy(camera.position).add(new THREE.Vector3(0, -pitch, -1));
+      camera.up.copy(up.set(Math.sin(roll), Math.cos(roll), 0));
       camera.lookAt(cameraTarget);
       camera.updateMatrixWorld();
-      monitor.visible = frame.screen > 0.001;
-      screenUniforms.uTime.value = seconds;
-      screenUniforms.uReduced.value = Number(reduced);
-      screenUniforms.uOpacity.value = frame.screen;
-      (backing.material as THREE.MeshStandardMaterial).opacity = frame.screen;
-      // Fade the physical housing only once its edges have passed the viewport.
-      graphite.transparent = true; graphite.opacity = frame.screen;
-      aluminum.transparent = true; aluminum.opacity = frame.screen;
-      if (frame.identity > 0.001) {
-        projected.copy(displayTopLeft).project(camera);
-        const left = (projected.x * 0.5 + 0.5) * width;
-        const top = (-projected.y * 0.5 + 0.5) * height;
-        projected.copy(displayBottomRight).project(camera);
-        const right = (projected.x * 0.5 + 0.5) * width;
-        const bottom = (-projected.y * 0.5 + 0.5) * height;
-        const bounds = `${left.toFixed(2)},${top.toFixed(2)},${(right-left).toFixed(2)},${(bottom-top).toFixed(2)}`;
-        if (bounds !== previousBounds) {
-          identity.style.left = `${left}px`; identity.style.top = `${top}px`;
-          identity.style.width = `${right-left}px`; identity.style.height = `${bottom-top}px`;
-          identity.style.setProperty("--display-scale", `${(right - left) / Math.min(width * 0.68, 960)}`);
-          previousBounds = bounds;
-        }
-      }
-      pointsMaterial.opacity = frame.stars * (0.30 + frame.speed * 0.6);
-      trailUniforms.uLength.value = frame.speed * 11;
-      trailUniforms.uOpacity.value = frame.stars * frame.speed * 0.8;
-      tunnel.visible = !reduced && frame.stars > 0.001;
+      const hovering = cursor.hovering(seconds);
+      logo.update({ seconds, dt, burst: frame.burst, opacity: frame.logo, flash: frame.flash, warp, hovering, pointer: cursor.state, reduced }, camera);
+      pointsMaterial.opacity = 0.14 * frame.identity * (1 - frame.stars) + frame.stars * (0.35 + frame.speed * 0.65);
+      trailUniforms.uLength.value = frame.speed * 26;
+      trailUniforms.uOpacity.value = frame.stars * frame.speed * 0.9;
+      tunnel.visible = !reduced && (frame.stars > 0.001 || frame.identity > 0.001);
       earth.update(frame.earth, seconds, reduced);
       const framing = earthFraming(width, height);
       if (frame.timeline.introT >= 1) {
@@ -208,6 +141,7 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
         const dive = !reduced && frame.timeline.passage ? smootherRange(0, 0.4, frame.timeline.passage.depth) : 0;
         const distance = THREE.MathUtils.lerp(orbit, 3.7, dive);
         camera.position.copy(earth.root.position).add(new THREE.Vector3(0, 0, distance));
+        camera.up.set(0, 1, 0);
         camera.lookAt(earth.root.position);
       }
       const placed = frame.earth.landing * (1 - frame.earth.overview);
@@ -246,8 +180,7 @@ export function createDescent(host: HTMLElement, identity: HTMLElement, onContex
       });
       geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose());
       city?.dispose(); transition.dispose();
-      earth.dispose();
-      black.dispose();
+      earth.dispose(); cursor.dispose();
       renderer.dispose(); canvas.remove();
     },
   };

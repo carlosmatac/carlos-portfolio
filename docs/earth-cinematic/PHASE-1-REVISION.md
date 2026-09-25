@@ -11,6 +11,15 @@ La petición posterior de Carlos añade una parada estable `#earth` entre la int
 - Regeneración de volúmenes: `node art-source/clouds/build-volume.mjs`. Dimensiones, bytes y hashes están en `art-source/clouds/assets.json`. El cargador limita el tamaño descomprimido y cancela descargas descartadas.
 - Verificación: `npm test -- --run`, `npx eslint src/components/descent art-source/clouds/build-volume.mjs`, `npm run build`. Los tests de shaders requieren además navegador con WebGL; los mocks unitarios no compilan GLSL.
 
+## Entrada — logo de puntos y salto a la Tierra
+
+La portada ya no tiene monitor. El logo elegido (`public/brand/carlos-mata-logo.svg`, QuiverAI `42-hidden-cm-cube`: un cubo isométrico que esconde C y M) se dibuja en grande como nube de puntos-símbolo con grosor real (`intro-logo-art.ts` parsea las dos rutas y las muestrea; `intro-logo.ts` las renderiza). Debajo van «Carlos Mata», el rol y «Scroll to start the journey».
+
+- Cursor: el logo se inclina en 3D hacia el cursor, sus puntos se apartan al pasar por encima y una banda de luz lo recorre cada pocos segundos.
+- Transición (`journey.ts`): la cámara empuja hacia el logo, que estalla en puntos que pasan junto a ella; un destello en el punto de fuga abre el salto; las estelas del túnel (más densas, en azul, violeta y ámbar) se alargan, el FOV se abre hasta +20° y la cámara alabea levemente. Después la velocidad cae de forma monótona mientras la Tierra crece desde el punto de fuga (`visible` desde el 46 % de la intro) hasta detenerse. El vuelo guiado sigue usando `flightEase`, que frena suavemente al llegar.
+- Fallback sin WebGL: el SVG en línea en el mismo sitio y tamaño (`logoLayout`). Movimiento reducido: el logo solo se desvanece, sin estallido, túnel ni destello.
+- Tests: `__tests__/intro.test.ts`.
+
 ## St. Louis — nube de puntos
 
 St. Louis usa ya la técnica de Madrid (puntos-símbolo finos, paleta violeta y ámbar, puntos que se apartan del cursor, onda al hacer clic, montaje al llegar). El sistema común está en `cities/point-cloud.ts` (`createPointField`, materiales con variantes FOG, SKY, FLAG y REFLECTION, carriles de paquetes y `disposeScene`) y lo comparten St. Louis y Madrid. Sustituye al render de Blender con nubes volumétricas; las imágenes `public/images/cities/st-louis/` siguen solo para el fallback HTML y el paso de nubes sin WebGL.

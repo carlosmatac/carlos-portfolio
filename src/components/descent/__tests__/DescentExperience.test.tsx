@@ -7,9 +7,9 @@ const sceneMock = vi.hoisted(() => ({
   render: vi.fn(), resize: vi.fn(), dispose: vi.fn(), fail: false, onContextLost: () => {},
 }));
 vi.mock("../create-descent", () => ({
-  createDescent: (...args: [HTMLElement, HTMLElement, () => void]) => {
+  createDescent: (...args: [HTMLElement, () => void]) => {
     if (sceneMock.fail) throw new Error("WebGL unavailable");
-    sceneMock.onContextLost = args[2];
+    sceneMock.onContextLost = args[1];
     return sceneMock;
   },
 }));
