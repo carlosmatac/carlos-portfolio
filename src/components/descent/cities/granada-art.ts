@@ -116,29 +116,47 @@ export function granadaCamera(view: GranadaView, excursion: number, sway: [numbe
   };
 }
 
-/** Night patrol of the lantern along the northern wall when no cursor is present. */
-export function patrolPoint(seconds: number): Vec3 {
-  const x = 2 + 21 * Math.sin(seconds * 0.07);
-  const z = ridgeZ(x) + enclosureHalfWidth(x) + 1.5;
-  return [x, terrainHeight(x, z) + 2.5, z];
+/** Coarse mosaic cell in CSS pixels; cells start chunky while landing and resolve into tiles. */
+export function granadaCell(width: number, excursion: number) {
+  const base = width < 700 ? 5 : 6;
+  return base * (1 + 6 * excursion * excursion);
 }
 
-/** First intersection of a ray with the terrain, or null if it escapes into the sky. */
-export function marchTerrain(origin: Vec3, direction: Vec3, maxDistance = 480): Vec3 | null {
-  let t = 0.5, previous = 0;
-  for (let i = 0; i < 400 && t < maxDistance; i++) {
-    const x = origin[0] + direction[0] * t, y = origin[1] + direction[1] * t, z = origin[2] + direction[2] * t;
-    if (y < terrainHeight(x, z)) {
-      let lo = previous, hi = t;
-      for (let k = 0; k < 10; k++) {
-        const mid = (lo + hi) / 2;
-        const mx = origin[0] + direction[0] * mid, my = origin[1] + direction[1] * mid, mz = origin[2] + direction[2] * mid;
-        if (my < terrainHeight(mx, mz)) hi = mid; else lo = mid;
-      }
-      return [origin[0] + direction[0] * hi, origin[1] + direction[1] * hi, origin[2] + direction[2] * hi];
+/** The hacker emblem: a Conway glider, rows top to bottom. `gliderCells` orients it towards one of four diagonals. */
+export const GLIDER = [".#.", "..#", "###"];
+export function gliderCells(x: number, y: number, direction: number) {
+  const cells: [number, number][] = [];
+  GLIDER.forEach((row, r) => row.split("").forEach((c, k) => {
+    if (c !== "#") return;
+    const dx = direction & 1 ? 2 - k : k, dy = direction & 2 ? r : 2 - r;
+    cells.push([x + dx, y + dy]);
+  }));
+  return cells;
+}
+/**
+ * Glider orientation for a heading in screen space (y up). Orientation 0 travels right and down;
+ * bit 0 mirrors it leftwards and bit 1 upwards.
+ */
+export const gliderDirection = (dx: number, dy: number) => (dx < 0 ? 1 : 0) | (dy > 0 ? 2 : 0);
+/** Reference Game of Life step on a torus, used by tests to pin the GPU rule. */
+export function lifeStep(alive: Set<string>, width: number, height: number) {
+  const counts = new Map<string, number>();
+  for (const key of alive) {
+    const [x, y] = key.split(",").map(Number);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const k = `${(x + dx + width) % width},${(y + dy + height) % height}`;
+      counts.set(k, (counts.get(k) ?? 0) + 1);
     }
-    previous = t;
-    t += Math.max(0.35, t * 0.018);
   }
-  return null;
+  const next = new Set<string>();
+  counts.forEach((n, k) => { if (n === 3 || (n === 2 && alive.has(k))) next.add(k); });
+  return next;
+}
+
+/** The pomegranate moon of Granada (and of the UGR emblem), above Sierra Nevada. */
+export const MOON = { position: [95, 100, -330] as Vec3, radius: 17 };
+/** Portrait framing looks down on the Alhambra, so the moon sits lower and nearer the centre there. */
+export function moonPosition(width: number, height: number): Vec3 {
+  return width < 700 || width / Math.max(1, height) < 0.9 ? [22, 26, -230] : MOON.position;
 }

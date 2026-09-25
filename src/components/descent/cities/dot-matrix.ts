@@ -53,6 +53,8 @@ export type DotMatrixFrame = {
 export function createDotMatrix<U extends Record<string, THREE.IUniform> = Record<never, THREE.IUniform>>(options: {
   name: string; world: THREE.Scene; eye: THREE.PerspectiveCamera; fragmentShader: string;
   uniforms?: U; cellMicro?: number;
+  /** Extra off-screen passes (e.g. a simulation) run after the trail, with the current trail texture. */
+  beforeDisplay?: (renderer: THREE.WebGLRenderer, trail: THREE.Texture) => void;
 }) {
   const { world, eye, cellMicro = 6 } = options;
   const scene = new THREE.Scene();
@@ -110,6 +112,7 @@ export function createDotMatrix<U extends Record<string, THREE.IUniform> = Recor
       targets.trail.reverse();
       trailPending = false;
     }
+    options.beforeDisplay?.(renderer, targets.trail[0].texture);
     renderer.setRenderTarget(previous);
     uniforms.source.value = targets.source.texture;
     uniforms.trail.value = targets.trail[0].texture;

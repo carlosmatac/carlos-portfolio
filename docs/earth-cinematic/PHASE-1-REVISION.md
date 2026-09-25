@@ -11,17 +11,16 @@ La petición posterior de Carlos añade una parada estable `#earth` entre la int
 - Regeneración de volúmenes: `node art-source/clouds/build-volume.mjs`. Dimensiones, bytes y hashes están en `art-source/clouds/assets.json`. El cargador limita el tamaño descomprimido y cancela descargas descartadas.
 - Verificación: `npm test -- --run`, `npx eslint src/components/descent art-source/clouds/build-volume.mjs`, `npm run build`. Los tests de shaders requieren además navegador con WebGL; los mocks unitarios no compilan GLSL.
 
-## Granada — diorama procedural en Three.js
+## Granada — mosaico nazarí
 
-Granada es la segunda escena urbana (`granada-sky`); Brno, Múnich y Madrid siguen sobre la Tierra. Sustituye al matte proyectado anterior: **no carga imágenes**. Todo se genera en `cities/create-granada.ts` a partir del modelo puro `cities/granada-art.ts`.
+Granada es la segunda escena urbana (`granada-sky`). Usa la tubería de `cities/dot-matrix.ts` de Brno y Múnich, con un lenguaje propio que junta Alhambra, Ingeniería Informática y UGR:
 
-- Vista desde el Albaicín: colina de la Sabika con la Alhambra (Alcazaba y Torre de la Vela con campanario, Comares, Carlos V con patio circular, Santa María, murallas almenadas y torres, Generalife), valle del Darro con farolas, Albaicín instanciado con ventanas cálidas, Vega con luces y Sierra Nevada con nieve irregular.
-- Estética de maqueta topográfica: curvas de nivel en el relieve (desvanecidas a distancia y en ángulos rasantes), luz de luna fría y focos cálidos sobre la Alhambra. Todo con shaders propios; el compositor aplica tone mapping y conversión de color una sola vez.
-- Interacción: el cursor (ratón o lápiz) mueve una linterna que calienta murallas y curvas de nivel, despeja la niebla y proyecta una celosía nazarí de estrellas de ocho puntas. La cámara hace un paralaje suave con el cursor. Con pantalla táctil, o sin cursor, la linterna patrulla la muralla norte. El picking combina un ray-march sobre `terrainHeight` con un raycast contra la malla de la Alhambra.
-- Movimiento reducido: sin paralaje, patrulla, balanceo de cipreses, parpadeo ni deriva de la niebla. La cámara de llegada y salida es función pura de `arrivalT`/`departureT`, así que el recorrido es reversible.
-- La escena solo espera al volumen de nubes compartido del paso entre mundos. El fallback HTML es un degradado CSS sin imágenes.
-- Tests: `src/components/descent/__tests__/granada.test.ts` (encuadre de escritorio y móvil, relieve, picking, cursor y táctil, reversibilidad, liberación de recursos).
-- Los anchors normalizados admiten el error de redondeo de coma flotante para no dejar Granada artificialmente en el último instante de llegada.
+- Mundo 3D fuera de pantalla (`create-granada.ts`, relieve y planta en `granada-art.ts`): la Alhambra iluminada con focos sobre la Sabika (Alcazaba y Torre de la Vela, Comares, Carlos V, Santa María, murallas y torres), el Albaicín, cipreses, farolas del Darro y Sierra Nevada con nieve en las cumbres.
+- Semitono fino (celdas de 6 px como en Brno y Múnich): el punto crece con la luminancia, en el tono del render con gradación hacia colores de azulejo. Las celdas más brillantes y las que quedan bajo el cursor se dibujan como estrellas nazaríes de ocho puntas. (Una primera versión con teselas de 12 px y sopa de Vida sembrada por el cursor resultaba ilegible.)
+- Ingeniería Informática: el Juego de la Vida de Conway corre en GPU (ping-pong a una textura por celda, ~9 generaciones/s). Al mover el cursor se lanzan planeadores (el emblema hacker) en la dirección del movimiento (`gliderDirection`); sin cursor, el cielo recibe uno cada pocos segundos. Las células mueren en el borde y a las ~10 s, así que no quedan restos. Las células vivas son cruces esmeralda. `lifeStep` es la referencia en JS de la regla.
+- UGR: una luna con forma de granada (fruto con corona de sépalos) sobre Sierra Nevada; en vertical se recoloca con `moonPosition`.
+- Llegada y salida: teselas gruesas que se resuelven; el tablero de la Vida se vacía mientras se viaja y con movimiento reducido.
+- Fallback CSS: rejilla de puntos cálida con la luna. Tests: `__tests__/granada.test.ts`.
 
 ## Brno — matriz de puntos
 
