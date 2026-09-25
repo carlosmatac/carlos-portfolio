@@ -141,6 +141,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 .earth-footer { position: absolute; z-index: 6; left: 4%; right: 4%; bottom: 3%; display: flex; justify-content: space-between; font-size: 9px; color: #717c8e; letter-spacing: .1em; opacity: var(--nav-opacity, 0); }
 .earth-footer a { letter-spacing: .02em; padding: 8px 0; }
 .earth-footer > span { padding: 8px 0; }
+.home-logo { position: absolute; z-index: 7; top: 22px; left: 4%; display: grid; place-items: center; width: 44px; height: 44px; margin: -8px; color: #c9d0dc; opacity: var(--nav-opacity, 0); transition: color .3s; }
+.home-logo svg { width: 28px; height: 28px; fill: currentColor; }
+.home-logo:hover { color: #fff; }
 .journey-seek { position: absolute; inset: 0; z-index: 5; background: #030407; opacity: var(--seek-opacity, 0); pointer-events: none; }
 .arrival-anchor { position: absolute; width: 1px; height: 1px; pointer-events: none; }
 .fallback-earth { display: none; position: absolute; left: 52%; top: 18%; width: min(55vw, 70svh); aspect-ratio: 1; border-radius: 50%; background: #0b2242 url('/textures/earth/day.jpg') 25% center / 200% 100%; box-shadow: inset -65px -15px 65px #000, 0 0 25px #3c75c840; opacity: var(--earth-opacity,0); }
@@ -176,7 +179,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
   .earth-footer { justify-content: flex-end; }
   .earth-shade { background: linear-gradient(0deg, #030407 22%, transparent 58%); }
   .fallback-earth { left: 15%; top: 10%; width: 70%; }
-
+  .home-logo { top: 16px; left: 9%; }
+  .home-logo svg { width: 24px; height: 24px; }
 }
 @media (max-height: 700px) and (min-width: 701px) {
   .earth-story { min-height: 330px; top: 46%; }

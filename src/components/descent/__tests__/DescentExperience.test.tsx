@@ -88,17 +88,36 @@ describe("Guided scroll integration", () => {
     expect(stage.getAttribute("data-travelling")).toBe("false");
   });
 
-  it("consumes one vertical swipe while preserving pinch gestures", async () => {
+  it("leaves touch scrolling native, even for a long fling, while preserving pinch gestures", async () => {
     const { stage } = await mount();
-    fireEvent.touchStart(stage, { touches: [{ clientX: 150, clientY: 500 }] });
-    fireEvent.touchMove(stage, { touches: [{ clientX: 150, clientY: 350 }] });
-    advance(5200);
-    fireEvent.touchMove(stage, { touches: [{ clientX: 150, clientY: 50 }] });
-    advance(5200);
-    expect(stage.getAttribute("data-stop")).toBe("granada");
+    const start = new TouchEvent("touchstart", { bubbles: true, cancelable: true });
+    stage.dispatchEvent(start);
+    const move = new TouchEvent("touchmove", { bubbles: true, cancelable: true });
+    stage.dispatchEvent(move);
+    expect([start.defaultPrevented, move.defaultPrevented]).toEqual([false, false]);
+    fireEvent.touchEnd(stage);
+    // Momentum carries the page several chapters in one scroll event; no seek may pull it back.
+    scrollY = pageHeight * stopProgress(3);
+    fireEvent.scroll(window);
+    advance(4000);
+    expect(scrollY).toBe(Math.round(pageHeight * stopProgress(3)));
+    expect(stage.getAttribute("data-stop")).toBe("munich");
+    expect(stage.getAttribute("data-travelling")).toBe("false");
     const pinch = new WheelEvent("wheel", { deltaY: 100, ctrlKey: true, cancelable: true });
     window.dispatchEvent(pinch);
     expect(pinch.defaultPrevented).toBe(false);
+  });
+
+  it("returns to the start from the logo once the journey has begun", async () => {
+    const { container, stage } = await mount();
+    const home = container.querySelector<HTMLAnchorElement>(".home-logo")!;
+    expect(home.inert).toBe(false);
+    fireEvent.click(home);
+    advance(1000);
+    expect(scrollY).toBe(0);
+    expect(stage.getAttribute("data-phase")).toBe("intro");
+    expect(location.hash).toBe("");
+    expect(home.inert).toBe(true);
   });
 
   it("leaves reduced-motion scrolling native and does not trap keyboard focus", async () => {

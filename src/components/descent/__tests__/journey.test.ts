@@ -25,6 +25,21 @@ describe("Scroll journey", () => {
     expect(steps.at(-1)).toBe(0);
   });
 
+  it("approaches the Earth in one motion that brakes only once, at the Earth stop", () => {
+    const earthStop = JOURNEY.anchors.earth / JOURNEY.totalH;
+    const samples = Array.from({ length: 201 }, (_, i) => journeyAt(earthStop * i / 200).approach);
+    const steps = samples.slice(1).map((value, i) => value - samples[i]);
+    const moving = steps.findIndex(step => step > 0);
+    const peak = steps.indexOf(Math.max(...steps));
+    steps.slice(moving).forEach((step, i) => {
+      expect(step).toBeGreaterThan(0);
+      if (moving + i > peak) expect(step).toBeLessThanOrEqual(steps[moving + i - 1] + 1e-12);
+    });
+    expect(samples.at(-1)).toBeCloseTo(1, 10);
+    expect(journeyAt(earthStop + 0.01).approach).toBe(1);
+    expect(journeyAt(earthStop, true).approach).toBe(0);
+  });
+
   it("lands at every city in order and leaves its chapter readable", () => {
     places.forEach((_,index)=>{
       const frame=earthAt(stopProgress(index));

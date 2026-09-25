@@ -14,6 +14,8 @@ import { createIntroLogo } from "./intro-logo";
 import { trackPointer } from "./cities/pointer";
 
 const BASE_FOV = 42, START_Z = 10;
+// The fall runs along (0, -85, -240) and ends TUNNEL_GAP in front of the Earth (see create-earth).
+const TUNNEL_LENGTH = Math.hypot(85, 240), TUNNEL_GAP = 18;
 
 const cityFactories = { "st-louis-sky": createStLouis, "granada-sky": createGranada, "brno-pixel": createBrno, "munich-mission": createMunich, "madrid-latent": createMadrid } satisfies Record<CitySceneId, (quality: CityQuality) => CityScene>;
 
@@ -119,8 +121,13 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       const warp = reduced ? 0 : frame.speed * frame.stars;
       camera.fov = BASE_FOV + 20 * warp;
       camera.updateProjectionMatrix();
-      camera.position.set(0, THREE.MathUtils.lerp(0, 0.57, frame.zoom) - frame.distance * 85, THREE.MathUtils.lerp(START_Z, 0.9, frame.zoom) - frame.distance * 240);
-      const pitch = Math.sin(frame.fall * Math.PI) * 0.24, roll = reduced ? 0 : Math.sin(frame.fall * Math.PI) * 0.16 * Math.sin(frame.fall * Math.PI * 1.5);
+      const overviewDistance = earthCameraDistance(Math.min(0.74, 0.86 * width / height));
+      const approaching = !reduced && frame.approach > 0 && ["intro", "earth-reveal"].includes(frame.timeline.phase.kind);
+      // Distance to the Earth shrinks geometrically, from the tunnel mouth down to the overview.
+      const approachDistance = Math.exp(THREE.MathUtils.lerp(Math.log(TUNNEL_LENGTH + TUNNEL_GAP), Math.log(overviewDistance), frame.approach));
+      const fell = approaching ? THREE.MathUtils.clamp((TUNNEL_LENGTH + TUNNEL_GAP - approachDistance) / TUNNEL_LENGTH, 0, 1) : frame.distance;
+      camera.position.set(0, THREE.MathUtils.lerp(0, 0.57, frame.zoom) - fell * 85, THREE.MathUtils.lerp(START_Z, 0.9, frame.zoom) - fell * 240);
+      const pitch = Math.sin(fell * Math.PI) * 0.24, roll = reduced ? 0 : Math.sin(fell * Math.PI) * 0.16 * Math.sin(fell * Math.PI * 1.5);
       cameraTarget.copy(camera.position).add(new THREE.Vector3(0, -pitch, -1));
       camera.up.copy(up.set(Math.sin(roll), Math.cos(roll), 0));
       camera.lookAt(cameraTarget);
@@ -133,8 +140,11 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       tunnel.visible = !reduced && (frame.stars > 0.001 || frame.identity > 0.001);
       earth.update(frame.earth, seconds, reduced);
       const framing = earthFraming(width, height);
-      if (frame.timeline.introT >= 1) {
-        const overviewDistance = earthCameraDistance(Math.min(0.74, 0.86 * width / height));
+      if (approaching && approachDistance <= TUNNEL_GAP) {
+        camera.position.copy(earth.root.position).add(new THREE.Vector3(0, 0, approachDistance));
+        camera.up.set(0, 1, 0);
+        camera.lookAt(earth.root.position);
+      } else if (!approaching && frame.timeline.introT >= 1) {
         const near = THREE.MathUtils.lerp(framing.visitDistance, overviewDistance, frame.earth.overview);
         const approach = THREE.MathUtils.lerp(18, near, frame.earth.landing);
         const orbit = THREE.MathUtils.lerp(approach, framing.transitDistance, frame.earth.altitude);

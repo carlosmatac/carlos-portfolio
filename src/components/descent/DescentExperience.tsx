@@ -24,7 +24,8 @@ export default function DescentExperience() {
     const display = identity.current!;
     const chapters = Array.from(story.current!.querySelectorAll<HTMLElement>(".earth-chapter"));
     const navigation = Array.from(stage.querySelectorAll<HTMLAnchorElement>(".journey-nav a"));
-    const tourControls = Array.from(stage.querySelectorAll<HTMLElement>(".journey-nav, .earth-footer"));
+    const tourControls = Array.from(stage.querySelectorAll<HTMLElement>(".journey-nav, .earth-footer, .home-logo"));
+    const homeLink = stage.querySelector<HTMLAnchorElement>(".home-logo")!;
     const fallbackCity = stage.querySelector<HTMLElement>(".fallback-city")!;
     const fallbackArch = fallbackCity.querySelector<HTMLElement>(".fallback-city-arch")!;
     const fallbackClouds = Array.from(fallbackCity.querySelectorAll<HTMLElement>(".fallback-city-cloud"));
@@ -37,7 +38,9 @@ export default function DescentExperience() {
     let measured = false;
     let writtenScroll = -1;
     const wheelGesture = new WheelGesture();
-    let touchY = 0, touchX = 0, touchUsed = false, hiddenAt = 0;
+    let touching = false, touchedAt = -Infinity, hiddenAt = 0;
+    // Momentum keeps scrolling after the finger lifts; never fight it with a seek.
+    const touchScrolling = () => touching || performance.now() - touchedAt < 2500;
     function onVisibility() {
       const now = performance.now();
       if (document.hidden) hiddenAt = now;
@@ -98,24 +101,25 @@ export default function DescentExperience() {
       if (event.key === "Home" || event.key === "End") moveTo(event.key === "Home" ? 0 : stopProgress(places.length - 1), true);
       else if (!busy()) moveTo(adjacentStop(progress, direction));
     }
-    function onTouchStart(event: TouchEvent) {
-      touchUsed = event.touches.length !== 1 || busy();
-      touchY = event.touches[0]?.clientY ?? 0;
-      touchX = event.touches[0]?.clientX ?? 0;
+    // Touch keeps the browser's native scroll; the damped clock turns it into the journey.
+    function onTouchStart() {
+      touching = true;
+      touchedAt = performance.now();
+      flight = null; seek = null;
     }
-    function onTouchMove(event: TouchEvent) {
-      if (!canGuide(event) || event.touches.length !== 1) return;
-      const delta = touchY - event.touches[0].clientY;
-      if (Math.abs(event.touches[0].clientX - touchX) > Math.abs(delta)) return;
-      event.preventDefault();
-      if (!touchUsed && Math.abs(delta) > 24) {
-        touchUsed = true;
-        if (!busy()) moveTo(adjacentStop(progress, Math.sign(delta)));
-      }
+    function onTouchEnd() {
+      touching = false;
+      touchedAt = performance.now();
     }
     function onNavigate(event: MouseEvent) {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href^="#"]') : null;
+      if (link?.hash === "#top") {
+        event.preventDefault();
+        history.replaceState(null, "", location.pathname + location.search);
+        moveTo(0, true);
+        return;
+      }
       const destination = anchorProgress(link?.hash.slice(1) ?? "");
       if (destination === undefined) return;
       event.preventDefault();
@@ -158,7 +162,7 @@ export default function DescentExperience() {
       // Scrollbar dragging, browser history and native accessibility navigation remain usable.
       flight = null; seek = null;
       const destination = Math.max(0, Math.min(1, (window.scrollY - sectionTop) / pageHeight));
-      if (!reduced.matches && Math.abs(destination - target) * JOURNEY.totalH > 4) {
+      if (!reduced.matches && !touchScrolling() && Math.abs(destination - target) * JOURNEY.totalH > 4) {
         seek = createSeek(progress, destination, performance.now());
       }
       target = destination;
@@ -227,6 +231,7 @@ export default function DescentExperience() {
         control.inert = frame.earth.navigation < 0.5;
         control.setAttribute("aria-hidden", String(frame.earth.navigation < 0.5));
       });
+      homeLink.tabIndex = frame.earth.navigation > 0.5 ? 0 : -1;
       stage.dataset.travelling = String(travelling);
       if (travelling || progress !== target || now - lastRender >= 1000 / 30) {
         scene?.render(frame, now / 1000, reduced.matches);
@@ -247,8 +252,9 @@ export default function DescentExperience() {
     window.addEventListener("keydown", onKey);
     document.addEventListener("visibilitychange", onVisibility);
     reduced.addEventListener("change", onMotionPreference);
-    stage.addEventListener("touchstart", onTouchStart, { passive: true });
-    stage.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
     stage.addEventListener("click", onNavigate);
     const observer = new ResizeObserver(measure); observer.observe(section);
     raf = requestAnimationFrame(draw);
@@ -271,8 +277,9 @@ export default function DescentExperience() {
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("visibilitychange", onVisibility);
       reduced.removeEventListener("change", onMotionPreference);
-      stage.removeEventListener("touchstart", onTouchStart);
-      stage.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
       stage.removeEventListener("click", onNavigate);
       observer.disconnect(); scene?.dispose();
     };
@@ -285,6 +292,9 @@ export default function DescentExperience() {
     } as CSSProperties}>
       <div className="descent-viewport" ref={viewport} data-renderer="fallback" data-phase="intro">
         <div className="descent-canvas" ref={host} />
+        <a className="home-logo" href="#top" aria-label="Carlos Mata — back to start" inert aria-hidden="true" tabIndex={-1}>
+          <svg viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
+        </a>
         <svg className="intro-logo" viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
         <div className="intro-identity" ref={identity}>
           <h1>Carlos Mata</h1>
