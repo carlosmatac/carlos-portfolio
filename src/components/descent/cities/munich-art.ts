@@ -4,27 +4,7 @@
  */
 type Vec3 = [number, number, number];
 
-/** 5×7 digits, top row first. */
-const FONT: Record<string, string[]> = {
-  0: [".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."],
-  1: ["..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###."],
-  2: [".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"],
-  3: ["####.", "....#", "....#", ".###.", "....#", "....#", "####."],
-  4: ["...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "...#."],
-  5: ["#####", "#....", "####.", "....#", "....#", "#...#", ".###."],
-  6: ["..##.", ".#...", "#....", "####.", "#...#", "#...#", ".###."],
-  7: ["#####", "....#", "...#.", "..#..", ".#...", ".#...", ".#..."],
-  8: [".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###."],
-  9: [".###.", "#...#", "#...#", ".####", "....#", "...#.", ".##.."],
-};
-const ink = (rows: string[]) => rows.join("").split("").filter(c => c === "#").length;
-/** Digits ordered from the least to the most ink, so brighter cells print heavier numbers. */
-export const DIGITS = Object.keys(FONT).sort((a, b) => ink(FONT[a]) - ink(FONT[b]) || Number(a) - Number(b));
-export const digitInk = (digit: string) => ink(FONT[digit]) / 35;
-/** Row bitmasks (bit 0 = left column), seven per digit in DIGITS order, for a GLSL constant array. */
-export const DIGIT_ROWS = DIGITS.flatMap(d => FONT[d].map(row => row.split("").reduce((bits, c, i) => c === "#" ? bits | (1 << i) : bits, 0)));
-
-/** Coarse cell width in CSS pixels; cells are 6×8 micro-pixels and start chunky while landing. */
+/** Coarse cell width in CSS pixels; cells are 6×6 micro-pixels and start chunky while landing. */
 export function munichCell(width: number, excursion: number) {
   const base = width < 700 ? 5 : 6;
   return base * (1 + 7 * excursion * excursion);
@@ -71,15 +51,17 @@ export function jetPair(seconds: number, reduced: boolean) {
 /** Mission route from the pad towards the Alps. */
 export const WAYPOINTS: Vec3[] = [[70, 58, -40], [230, 86, -210], [520, 126, -430], [960, 176, -720]];
 
-/** HAT.tec logotype, in logo units (cap height 1): grey H and T, blue open triangle for the A, and the TEC line. */
+/** HAT.tec logotype, in logo units (cap height 1): a two-stem grey H and T around the blue open triangle A. */
 export const HAT_LOGO = {
   grey: [
-    [[0, 0], [0.24, 0], [0.24, 0.4], [0.62, 0.4], [0.62, 0.62], [0.24, 0.62], [0.24, 1], [0, 1]],
-    [[1.62, 0.78], [2.36, 0.78], [2.36, 1], [1.62, 1]],
-    [[1.87, 0], [2.11, 0], [2.11, 0.78], [1.87, 0.78]],
+    [[0, 0], [0.22, 0], [0.22, 1], [0, 1]],
+    [[0.46, 0], [0.68, 0], [0.68, 1], [0.46, 1]],
+    [[0.22, 0.4], [0.46, 0.4], [0.46, 0.6], [0.22, 0.6]],
+    [[1.94, 0.78], [2.72, 0.78], [2.72, 1], [1.94, 1]],
+    [[2.22, 0], [2.44, 0], [2.44, 0.78], [2.22, 0.78]],
   ] as [number, number][][],
-  blue: { outer: [[0.62, 0], [1.72, 0], [1.17, 1.12]] as [number, number][], inner: [[0.9, 0.16], [1.44, 0.16], [1.17, 0.7]] as [number, number][] },
-  width: 2.36,
+  blue: { outer: [[0.8, 0], [1.86, 0], [1.33, 1.08]] as [number, number][], inner: [[1.06, 0.16], [1.6, 0.16], [1.33, 0.68]] as [number, number][] },
+  width: 2.72,
 };
 
 export type MunichView = { fov: number; position: Vec3; target: Vec3 };
@@ -87,7 +69,7 @@ export type MunichView = { fov: number; position: Vec3; target: Vec3 };
 export function munichView(width: number, height: number): MunichView {
   const aspect = width / Math.max(1, height);
   if (width < 700 || aspect < 0.9) return { fov: 58, position: [-36, 52, 58], target: [-7, 22, -2] };
-  return { fov: 40, position: [-36, 47, 50], target: [4, 38.5, -30] };
+  return { fov: 40, position: [-36, 47, 50], target: [4, 33.5, -30] };
 }
 export function munichCamera(view: MunichView, excursion: number, sway: [number, number]) {
   const [px, py, pz] = view.position, [tx, ty, tz] = view.target;

@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { gzipSync } from "node:zlib";
 import { createMunich } from "../cities/create-munich";
 import {
-  aimPoint, DIGIT_ROWS, DIGITS, digitInk, HAT_LOGO, helicopterGoal, JET_PERIOD, jetPair, munichCamera, munichCell, munichView, PAD, stepHelicopter,
+  aimPoint, HAT_LOGO, helicopterGoal, JET_PERIOD, jetPair, munichCamera, munichCell, munichView, PAD, stepHelicopter,
 } from "../cities/munich-art";
 import { JOURNEY, sampleJourney } from "../journey-timeline";
 
@@ -32,13 +32,9 @@ it("gives Munich its own mission scene", () => {
   expect(sampleJourney(JOURNEY.anchors.munich).city?.sceneId).toBe("munich-mission");
 });
 
-it("prints ten digits ordered by ink from a 5×7 font", () => {
-  expect([...DIGITS].sort()).toEqual(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
-  expect(DIGITS[0]).toBe("1");
-  DIGITS.slice(1).forEach((d, i) => expect(digitInk(d)).toBeGreaterThanOrEqual(digitInk(DIGITS[i])));
-  expect(DIGIT_ROWS).toHaveLength(70);
-  DIGIT_ROWS.forEach(row => { expect(row).toBeGreaterThanOrEqual(0); expect(row).toBeLessThan(32); });
-  expect(munichCell(1440, 0)).toBe(6); expect(munichCell(1440, 1)).toBeGreaterThan(40);
+it("starts with chunky cells while landing and resolves to fine halftone dots", () => {
+  expect(munichCell(1440, 0)).toBe(6); expect(munichCell(390, 0)).toBe(5);
+  expect(munichCell(1440, 1)).toBeGreaterThan(40);
 });
 
 it("steers the H145 inside a box above the pad, banking into turns without overshooting", () => {
@@ -70,7 +66,12 @@ it("flies a deterministic Eurofighter pair with a wingman in echelon", () => {
   expect(jetPair(99, true)).toEqual(jetPair(3, true));
 });
 
-it("draws the HAT.tec logotype with the blue A as an open triangle", () => {
+it("draws the HAT.tec logotype with a two-stem H and the blue A as an open triangle", () => {
+  const stems = HAT_LOGO.grey.filter(shape => {
+    const xs = shape.map(p => p[0]), ys = shape.map(p => p[1]);
+    return Math.max(...xs) < HAT_LOGO.blue.outer[0][0] && Math.min(...ys) === 0 && Math.max(...ys) === 1;
+  });
+  expect(stems).toHaveLength(2);
   const [a, b, c] = HAT_LOGO.blue.outer, inside = ([x, y]: [number, number]) => {
     const s = (p: [number, number], q: [number, number]) => (q[0] - p[0]) * (y - p[1]) - (q[1] - p[1]) * (x - p[0]);
     return s(a, b) >= 0 && s(b, c) >= 0 && s(c, a) >= 0;
@@ -116,7 +117,8 @@ it("renders the world off-screen before the digit display and restores the calle
   expect(renderer.render.mock.calls[0][0]).toBe(world);
   expect(target).toBe(outer);
   expect(display.material.uniforms.ready.value).toBe(1);
-  expect(display.material.fragmentShader).toContain("ROWS[70]");
+  expect(display.material.fragmentShader).toContain("sqrt(level)");
+  expect(display.material.fragmentShader).not.toContain("ROWS");
   city.dispose(); outer.dispose();
 });
 

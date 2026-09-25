@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { createCloudVolume } from "../clouds/cloud-volume";
 import { createDotMatrix, DOT_MATRIX_GLSL } from "./dot-matrix";
 import {
-  aimPoint, DIGIT_ROWS, HAT_LOGO, helicopterGoal, jetPair, munichCamera, munichCell, munichView, PAD, random, stepHelicopter, WAYPOINTS,
+  aimPoint, HAT_LOGO, helicopterGoal, jetPair, munichCamera, munichCell, munichView, PAD, random, stepHelicopter, WAYPOINTS,
   type MunichView,
 } from "./munich-art";
 import { trackPointer } from "./pointer";
@@ -11,13 +11,13 @@ import type { CityFrame, CityQuality, CityScene } from "./types";
 type Vec3 = [number, number, number];
 
 /**
- * Mission display: luminance picks one of ten digits by ink, coloured on a tactical ramp (HAT blue → cyan → white)
- * with warm sources in amber. The cursor is a thermal sight with targeting brackets; its trail scrambles the data.
+ * Mission display: a halftone of dots whose size follows luminance, coloured on a tactical ramp (HAT blue → cyan → white)
+ * with warm sources in amber. The brightest cells become squares; the cursor trail leaves plus signs and the
+ * thermal sight turns its dots into diamonds, framed by targeting brackets.
  */
 const DISPLAY_FRAGMENT = /* glsl */ `
   ${DOT_MATRIX_GLSL}
   uniform float lock;
-  const int ROWS[70] = int[70](${DIGIT_ROWS.join(", ")});
   vec3 tactical(float t) {
     vec3 c = mix(vec3(0.03, 0.06, 0.16), vec3(0.14, 0.29, 0.66), smoothstep(0.0, 0.35, t));
     c = mix(c, vec3(0.3, 0.82, 1.0), smoothstep(0.35, 0.75, t));
@@ -31,7 +31,7 @@ const DISPLAY_FRAGMENT = /* glsl */ `
   }
   void main() {
     vec2 frag = gl_FragCoord.xy;
-    vec2 size = vec2(6.0, 8.0) * micro;
+    vec2 size = vec2(6.0) * micro;
     vec2 index = floor(frag / size), local = frag - index * size;
     vec2 centre = (index + 0.5) * size / resolution;
     vec3 field = trailAt(centre);
@@ -42,13 +42,17 @@ const DISPLAY_FRAGMENT = /* glsl */ `
     light = pow(light, 1.15) * storyLight() + sweep * 0.12 * step(0.04, light);
     float distanceToMouse = length((index + 0.5) * size - mouse);
     float sight = lens * (1.0 - smoothstep(lensRadius * 0.85, lensRadius, distanceToMouse));
-    float level = clamp(floor(light * 11.0 + hash(index * 1.37) - 0.5), 0.0, 10.0);
-    float flicker = step(0.93, hash(index + floor(time * 1.5)));
-    float scramble = step(0.25, field.z);
-    level = level > 0.0 ? clamp(level + flicker - 2.0 * flicker * step(0.5, hash(index)), 1.0, 10.0) : level;
-    if (scramble > 0.5) level = 1.0 + floor(hash(index + floor(time * 22.0)) * 10.0);
-    ivec2 m = ivec2(local / micro);
-    bool ink = level > 0.0 && m.x < 5 && m.y < 7 && ((ROWS[int(level - 1.0) * 7 + (6 - m.y)] >> m.x) & 1) == 1;
+    float level = clamp(light + (hash(index * 1.37) - 0.5) * 0.08, 0.0, 1.0);
+    float scramble = step(0.25, field.z) * step(0.35, hash(index + floor(time * 18.0)));
+    float flicker = step(0.965, hash(index + floor(time * 1.5))) * step(0.1, level);
+    vec2 q = local / size * 2.0 - 1.0;
+    float radius = level < 0.07 ? 0.0 : 0.2 + 0.64 * sqrt(level), square = max(abs(q.x), abs(q.y));
+    float mark;
+    if (scramble + flicker > 0.5) mark = step(min(abs(q.x), abs(q.y)), 0.18) * step(square, max(radius, 0.55));
+    else if (sight > 0.5) mark = step(abs(q.x) + abs(q.y), radius * 1.2);
+    else if (level > 0.84) mark = step(square, 0.7);
+    else mark = step(length(q), radius);
+    bool ink = mark > 0.5;
     float warmth = clamp((colour.r - colour.b) / max(peak, 1e-4), 0.0, 1.0), blueness = clamp((colour.b - colour.r) / max(peak, 1e-4), 0.0, 1.0);
     vec3 tone = mix(tactical(light), vec3(1.0, 0.6, 0.14) * (0.45 + 0.7 * light), smoothstep(0.3, 0.65, warmth));
     tone = mix(tone, vec3(0.16, 0.42, 1.0) * (0.5 + 0.8 * light), smoothstep(0.3, 0.6, blueness) * step(0.3, light));
@@ -75,12 +79,13 @@ function logoGeometry(depth: number) {
   const grey = HAT_LOGO.grey.map(points => new THREE.ExtrudeGeometry(shape(points), { depth, bevelEnabled: false }));
   const triangle = shape(HAT_LOGO.blue.outer);
   triangle.holes.push(new THREE.Path(HAT_LOGO.blue.inner.map(([x, y]) => new THREE.Vector2(x, y))));
+  // "TEC" in blocky strokes under the mark, wide enough to survive the halftone.
+  const bar = (x: number, y: number, w: number, h: number) => new THREE.BoxGeometry(w, h, depth).translate(x + w / 2, y + h / 2, depth / 2);
+  const t = 0.075, top = -0.16, bottom = -0.56;
   const letters: THREE.BufferGeometry[] = [
-    new THREE.BoxGeometry(0.34, 0.035, depth).translate(0.52, -0.2, depth / 2), new THREE.BoxGeometry(0.035, 0.3, depth).translate(0.52, -0.37, depth / 2),
-    new THREE.BoxGeometry(0.035, 0.3, depth).translate(1.02, -0.37, depth / 2),
-    ...[-0.2, -0.37, -0.52].map(y => new THREE.BoxGeometry(0.26, 0.035, depth).translate(1.15, y, depth / 2)),
-    new THREE.BoxGeometry(0.035, 0.3, depth).translate(1.62, -0.37, depth / 2),
-    ...[-0.2, -0.52].map(y => new THREE.BoxGeometry(0.28, 0.035, depth).translate(1.77, y, depth / 2)),
+    bar(0.72, top - t, 0.36, t), bar(0.9 - t / 2, bottom, t, top - bottom - t),
+    bar(1.22, bottom, t, top - bottom), ...[top - t, (top + bottom - t) / 2, bottom].map(y => bar(1.22, y, 0.3, t)),
+    bar(1.7, bottom, t, top - bottom), bar(1.7, top - t, 0.32, t), bar(1.7, bottom, 0.32, t),
   ];
   return { grey, blue: new THREE.ExtrudeGeometry(triangle, { depth, bevelEnabled: false }), letters };
 }
@@ -251,12 +256,12 @@ export function createMunich(quality: CityQuality = "desktop"): CityScene {
   bmw.position.set(360, 0, -800);
   world.add(frauenkirche, olympia, bmw);
 
-  // HAT.tec: the rooftop helipad carries the logo instead of the usual H.
+  // HAT.tec: the rooftop with its helipad and illuminated sign.
   const building = new THREE.Mesh(own(new THREE.BoxGeometry(46, PAD[1], 40).translate(0, PAD[1] / 2, 0)), mat(new THREE.MeshStandardMaterial({ color: 0x1b1f28, roughness: 0.7 })));
   building.position.set(PAD[0], 0, PAD[2]);
   const deck = new THREE.Mesh(own(new THREE.CylinderGeometry(12, 12, 0.3, 48)), mat(new THREE.MeshStandardMaterial({ color: 0x151920, roughness: 0.6 })));
   deck.position.set(PAD[0], PAD[1] + 0.15, PAD[2]);
-  const ring = new THREE.Mesh(own(new THREE.RingGeometry(10.6, 11.2, 64).rotateX(-Math.PI / 2)), mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.9, 0.95) })));
+  const ring = new THREE.Mesh(own(new THREE.RingGeometry(10.7, 11, 64).rotateX(-Math.PI / 2)), mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.22, 0.24, 0.3) })));
   ring.position.set(PAD[0], PAD[1] + 0.32, PAD[2]);
   world.add(building, deck, ring);
   const logo = new THREE.Group(); logo.name = "HAT_Logo";
@@ -264,17 +269,15 @@ export function createMunich(quality: CityQuality = "desktop"): CityScene {
   const grey = mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 1.15, 1.25) })), blue = mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.08, 0.3, 2.6), fog: false }));
   [...shapes.grey, ...shapes.letters].forEach(g => logo.add(new THREE.Mesh(own(g), grey)));
   logo.add(new THREE.Mesh(own(shapes.blue), blue));
-  // A lit rooftop sign faces the city; the pad itself carries the blue triangle instead of an H.
+  // A lit rooftop sign faces the city from the edge of the helipad roof.
   logo.children.forEach(child => child.position.set(-HAT_LOGO.width / 2, 0.52, 0));
   logo.scale.setScalar(5.2);
   logo.rotation.y = -0.64;
-  logo.position.set(PAD[0] - 14, PAD[1] + 1.2, PAD[2] + 17);
+  logo.position.set(PAD[0] - 16, PAD[1] + 1.2, PAD[2] + 18);
   world.add(logo);
-  const signFrame = new THREE.Mesh(own(new THREE.BoxGeometry(14, 0.4, 0.4)), mat(new THREE.MeshStandardMaterial({ color: 0x2a2f3a })));
-  signFrame.position.set(PAD[0] - 14, PAD[1] + 1.0, PAD[2] + 17); signFrame.rotation.y = -0.64;
-  const padMark = new THREE.Mesh(own(shapes.blue.clone().center().rotateX(-Math.PI / 2)), blue);
-  padMark.scale.setScalar(6); padMark.rotation.y = -0.64; padMark.position.set(PAD[0], PAD[1] + 0.34, PAD[2]);
-  world.add(signFrame, padMark);
+  const signFrame = new THREE.Mesh(own(new THREE.BoxGeometry(HAT_LOGO.width * 5.2 + 1, 0.4, 0.4)), mat(new THREE.MeshStandardMaterial({ color: 0x2a2f3a })));
+  signFrame.position.set(PAD[0] - 16, PAD[1] + 1.0, PAD[2] + 18); signFrame.rotation.y = -0.64;
+  world.add(signFrame);
   const padLights: number[] = [];
   for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; padLights.push(PAD[0] + Math.cos(a) * 11.8, PAD[1] + 0.5, PAD[2] + Math.sin(a) * 11.8); }
   const padGeometry = own(new THREE.BufferGeometry()); padGeometry.setAttribute("position", new THREE.Float32BufferAttribute(padLights, 3));
