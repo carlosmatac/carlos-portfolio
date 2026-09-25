@@ -1,162 +1,122 @@
 /**
- * Procedural model of Granada seen from the Albaicín: Sabika hill with the Alhambra,
- * the Darro valley, the Albaicín slope and Sierra Nevada. Pure and deterministic so the
- * scene, tests and cursor picking share one source. Units are artistic (1 ≈ 14 m).
+ * Granada as a study at the window: a student programming while the sun rises and sets outside.
+ * Pure helpers shared by the scene and its tests. Scene units are metres; the student faces −z.
  */
-type Vec3 = [number, number, number];
+export type Vec3 = [number, number, number];
 
-function hash(ix: number, iz: number) {
-  let h = Math.imul(ix, 374761393) + Math.imul(iz, 668265263);
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
-}
-function noise(x: number, z: number) {
-  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
-  const u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
-  const a = hash(ix, iz), b = hash(ix + 1, iz), c = hash(ix, iz + 1), d = hash(ix + 1, iz + 1);
-  return (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * 2 - 1;
-}
-function fbm(x: number, z: number, octaves: number) {
-  let sum = 0, amp = 0.5, f = 1;
-  for (let i = 0; i < octaves; i++) { sum += noise(x * f, z * f) * amp; f *= 2.03; amp *= 0.5; }
-  return sum;
-}
-function ridged(x: number, z: number, octaves: number) {
-  let sum = 0, amp = 0.55, f = 1, weight = 1;
-  for (let i = 0; i < octaves; i++) {
-    const n = 1 - Math.abs(noise(x * f + i * 17.3, z * f - i * 9.1));
-    const s = n * n * weight;
-    weight = Math.min(1, s * 1.6);
-    sum += s * amp; f *= 2.1; amp *= 0.48;
-  }
-  return sum;
-}
-const smoothstep = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+/** One full day outside the window: sunrise, a slow arc, sunset, and a short night with the moon. */
+export const DAY_SECONDS = 60;
+const DAYLIGHT_SHARE = 0.72;
+/** The clock starts just after sunrise, so a visitor lands in warm light. */
+const DAY_OFFSET = 0.06;
+/** Where the sun and moon travel: a vertical plane behind the rooftops, centred on the window as seen from the room. */
+export const SKY = { z: -7.2, horizon: 0.95, height: 1.75, rise: -3.6, set: 1.1 };
 
-/** Crest line of the Sabika hill, running west (−x) to east (+x). */
-export const ridgeZ = (x: number) => -2 + 0.06 * x;
-/** Half width of the walled enclosure; the Alcazaba forms the narrow western prow. */
-export function enclosureHalfWidth(x: number) {
-  if (x < -25 || x > 31) return 0;
-  const lens = Math.sqrt(Math.max(0, 1 - ((x - 3) / 28.5) ** 2));
-  return (x < -12 ? 2.2 + (x + 25) * 0.22 : 5.2) * lens + 0.4;
-}
-function crest(x: number) {
-  return smoothstep(-44, -24, x) * (1 - smoothstep(52, 80, x)) * (7.2 + 0.035 * (x + 24));
-}
-export function terrainHeight(x: number, z: number) {
-  const across = z - ridgeZ(x);
-  const hill = crest(x) * Math.exp(-((across / (across > 0 ? 7.5 : 11)) ** 2));
-  const plateau = crest(x) > 0 ? Math.max(0, 1 - Math.abs(across) / Math.max(0.1, enclosureHalfWidth(x) + 1.2)) * 0.9 : 0;
-  const cerroSol = 14 * Math.exp(-(((x - 72) / 30) ** 2) - (((z + 24) / 22) ** 2));
-  const albaicin = Math.max(0, z - 21) * (0.14 * smoothstep(-110, -40, x) + 0.06);
-  const detail = fbm(x * 0.09, z * 0.09, 4) * (0.5 + 0.25 * smoothstep(20, 60, z));
-  const far = -z - 88;
-  const massif = far <= 0 ? 0 : Math.exp(-(((x - 40) / 110) ** 2) - (((z + 330) / 70) ** 2)) + 0.6 * Math.exp(-(((x + 120) / 90) ** 2) - (((z + 360) / 70) ** 2));
-  const warp = far <= 0 ? 0 : fbm(x * 0.004, z * 0.004, 3) * 40;
-  const sierra = far <= 0 ? 0 : ridged((x + warp) * 0.011 + 3.1, (z - warp) * 0.011, 6) * (8 + 26 * smoothstep(40, 200, far) + 52 * massif) * smoothstep(0, 50, far)
-    + 16 * massif;
-  return hill + plateau + cerroSol + albaicin + detail + sierra;
-}
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const smooth = (a: number, b: number, v: number) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const mix3 = (a: Vec3, b: Vec3, t: number): Vec3 => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 
-export type GranadaBlock = {
-  name: string; x: number; dz: number; w: number; d: number; h: number;
-  kind: "tower" | "hall" | "palace" | "church";
-  roof?: "flat" | "pitched" | "belfry";
-  angle?: number;
-};
-/** Condensed plan. Heights are above local ground; dz is measured from the crest line. */
-export const ALHAMBRA: readonly GranadaBlock[] = [
-  { name: "Torre_de_la_Vela", x: -24.2, dz: 0.4, w: 1.76, d: 1.76, h: 4.41, kind: "tower", roof: "belfry" },
-  { name: "Torre_del_Homenaje", x: -17.5, dz: -2.4, w: 1.49, d: 1.49, h: 5.1, kind: "tower" },
-  { name: "Torre_Quebrada", x: -18.5, dz: 2.6, w: 1.32, d: 1.54, h: 3.83, kind: "tower" },
-  { name: "Torre_de_las_Armas", x: -14.5, dz: 3.6, w: 1.1, d: 1.1, h: 3.13, kind: "tower" },
-  { name: "Torre_de_Comares", x: -5, dz: 4.6, w: 2.53, d: 2.42, h: 7.08, kind: "tower" },
-  { name: "Palacio_de_Comares", x: -5.5, dz: 0.9, w: 1.76, d: 3.58, h: 2.67, kind: "hall", roof: "pitched", angle: Math.PI / 2 },
-  { name: "Patio_de_los_Leones", x: -0.5, dz: 1.6, w: 3.41, d: 2.31, h: 2.44, kind: "hall", roof: "pitched" },
-  { name: "Mexuar", x: -9.5, dz: 2.6, w: 2.31, d: 1.43, h: 2.55, kind: "hall", roof: "pitched" },
-  { name: "Torre_de_las_Damas", x: 3.8, dz: 5, w: 1.43, d: 1.21, h: 3.48, kind: "tower", roof: "pitched" },
-  { name: "Palacio_de_Carlos_V", x: 3.6, dz: -2, w: 4.18, d: 4.18, h: 3.25, kind: "palace" },
-  { name: "Santa_Maria", x: 10.5, dz: -1.6, w: 2.86, d: 1.54, h: 2.9, kind: "church", roof: "pitched" },
-  { name: "Campanario", x: 13.4, dz: -1, w: 0.88, d: 0.88, h: 5.22, kind: "tower", roof: "pitched" },
-  { name: "Torre_de_la_Cautiva", x: 13, dz: 5.4, w: 1.32, d: 1.32, h: 3.6, kind: "tower" },
-  { name: "Torre_de_las_Infantas", x: 18.5, dz: 4.8, w: 1.43, d: 1.32, h: 3.83, kind: "tower" },
-  { name: "Torre_de_los_Siete_Suelos", x: 16, dz: -4.4, w: 1.32, d: 1.32, h: 3.36, kind: "tower" },
-  { name: "Torre_del_Cabo", x: 24.5, dz: 3.4, w: 1.21, d: 1.21, h: 3.25, kind: "tower" },
-  { name: "Torre_de_la_Justicia", x: -2, dz: -5.2, w: 1.43, d: 1.43, h: 3.71, kind: "tower" },
-  { name: "Generalife_Pabellon_Norte", x: 58, dz: 0.8, w: 1.87, d: 1.32, h: 2.44, kind: "hall", roof: "pitched" },
-  { name: "Generalife_Pabellon_Sur", x: 50, dz: 0.2, w: 1.65, d: 1.32, h: 1.97, kind: "hall", roof: "pitched" },
-  { name: "Generalife_Torre", x: 59.8, dz: 2, w: 0.99, d: 0.99, h: 3.36, kind: "tower", roof: "pitched" },
-];
-
-/** Deterministic PRNG for instancing layouts. */
-export function random(seed: number) {
-  return () => {
-    seed |= 0; seed = seed + 0x6d2b79f5 | 0;
-    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+export type Daylight = { phase: number; elevation: number; daylight: number; warmth: number; night: number; sun: Vec3; moon: Vec3; moonlight: number };
+/** Reduced motion holds a still golden hour. */
+export function studyDaylight(seconds: number, reduced = false): Daylight {
+  const phase = reduced ? 0.09 : (((seconds / DAY_SECONDS + DAY_OFFSET) % 1) + 1) % 1;
+  const day = phase / DAYLIGHT_SHARE, night = (phase - DAYLIGHT_SHARE) / (1 - DAYLIGHT_SHARE);
+  const elevation = phase < DAYLIGHT_SHARE ? Math.sin(Math.PI * day) : -0.3 * Math.sin(Math.PI * night);
+  const daylight = smooth(-0.08, 0.32, elevation);
+  const warmth = daylight * (1 - smooth(0.2, 0.62, elevation));
+  const moonArc = phase < DAYLIGHT_SHARE ? 0 : Math.sin(Math.PI * night);
+  return {
+    phase, elevation, daylight, warmth, night: 1 - daylight,
+    sun: [lerp(SKY.rise, SKY.set, clamp01(day)), SKY.horizon + elevation * SKY.height, SKY.z],
+    moon: [lerp(SKY.rise + 0.6, SKY.set - 0.4, clamp01(night)), SKY.horizon - 0.4 + moonArc * 1.9, SKY.z - 0.2],
+    moonlight: smooth(0.15, 0.4, moonArc),
   };
 }
 
-export type GranadaView = { fov: number; position: Vec3; target: Vec3 };
-/** Desktop keeps the left third quiet for the story; portrait lifts the Alcazaba above the text. */
-export function granadaView(width: number, height: number): GranadaView {
-  const aspect = width / Math.max(1, height);
-  if (width < 700 || aspect < 0.9) return { fov: 50, position: [-12, 23, 100], target: [-6, -9, -14] };
-  return { fov: 40, position: [-22, 14.5, 74], target: [-11, 11.5, -6] };
+/** The student's loop: typing, a pause to look out of the window, a stretch, and back to the code. */
+export const LOOP_SECONDS = 18;
+const KEYBOARD: Vec3 = [-0.3, 0.8, -1.93];
+export const DESK = { top: 0.76, front: -1.75, back: -2.5, left: -1.3, right: 1.3 };
+
+export type StudentPose = {
+  /** 1 while the hands are on the keyboard. */
+  typing: number; look: number; stretch: number;
+  chest: Vec3; head: Vec3; pitch: number; yaw: number;
+  shoulders: [Vec3, Vec3]; elbows: [Vec3, Vec3]; hands: [Vec3, Vec3];
+};
+export function studentPose(seconds: number, sunX = 0, reduced = false): StudentPose {
+  const t = reduced ? 2 : ((seconds % LOOP_SECONDS) + LOOP_SECONDS) % LOOP_SECONDS;
+  const look = smooth(8, 9.2, t) * (1 - smooth(14.2, 15.4, t));
+  const stretch = smooth(11.4, 12.4, t) * (1 - smooth(13.3, 14.3, t));
+  const typing = 1 - look;
+  const lean = look * 0.09;
+  const chest: Vec3 = [-0.3, 1.02 - lean * 0.2, -1.45 + lean];
+  const neck: Vec3 = [chest[0], chest[1] + 0.13, chest[2] - 0.02 + lean * 0.2];
+  const shoulders: [Vec3, Vec3] = [[chest[0] - 0.18, chest[1], chest[2]], [chest[0] + 0.18, chest[1], chest[2]]];
+  // Alternating key presses: short, uneven taps rather than a single sine.
+  const tap = (phase: number) => reduced ? 0 : typing * Math.max(0, Math.sin(seconds * 17 + phase)) * Math.max(0, Math.sin(seconds * 5.3 + phase * 2)) * 0.02;
+  const type: [Vec3, Vec3] = [[KEYBOARD[0] - 0.1, KEYBOARD[1] + tap(0), KEYBOARD[2]], [KEYBOARD[0] + 0.1, KEYBOARD[1] + tap(1.7), KEYBOARD[2] + 0.01]];
+  const rest: [Vec3, Vec3] = [[-0.46, DESK.top + 0.03, DESK.front - 0.08], [-0.12, DESK.top + 0.03, DESK.front - 0.06]];
+  // Hands clasped behind the head.
+  const up: [Vec3, Vec3] = [[chest[0] - 0.06, chest[1] + 0.3, chest[2] + 0.1], [chest[0] + 0.06, chest[1] + 0.3, chest[2] + 0.1]];
+  const hands = [0, 1].map(i => mix3(mix3(type[i], rest[i], look), up[i], stretch)) as [Vec3, Vec3];
+  const elbows = [0, 1].map(i => {
+    const side = i ? 1 : -1, s = shoulders[i];
+    const typingElbow: Vec3 = [s[0] + side * 0.05, 0.82, -1.58];
+    const raised: Vec3 = [s[0] + side * 0.2, chest[1] + 0.26, chest[2] + 0.12];
+    // Elbows swing outward on the way up instead of passing through the shoulder.
+    const swing = 4 * stretch * (1 - stretch);
+    const elbow = mix3(mix3(typingElbow, [s[0] + side * 0.06, 0.84, -1.56 + lean], look), raised, stretch);
+    return [elbow[0] + side * 0.1 * swing, elbow[1] - 0.05 * swing, elbow[2]] as Vec3;
+  }) as [Vec3, Vec3];
+  const nod = reduced ? 0 : Math.sin(seconds * 0.9) * 0.025 * typing;
+  return {
+    typing, look, stretch, chest, shoulders, elbows, hands,
+    head: [neck[0], neck[1] + 0.12, neck[2]],
+    pitch: lerp(-0.16 + nod, 0.3, look) - stretch * 0.12,
+    yaw: look * Math.max(-0.35, Math.min(0.35, -(sunX + 0.3) * 0.12)),
+  };
 }
 
-/** Where the arrival and departure excursions place the camera, in scene units. */
-export function granadaCamera(view: GranadaView, excursion: number, sway: [number, number]) {
+/** Lines of code on the monitor: indent, width and colour, typed one after another and scrolled upward. */
+export const CODE_ROWS = 11;
+export const CODE_COLOURS: Vec3[] = [[0.62, 0.64, 1.0], [0.3, 0.72, 0.85], [1.0, 0.64, 0.34], [0.36, 0.36, 0.55]];
+export function codeLine(index: number) {
+  const h = (n: number) => { const x = Math.sin((index + 1) * 12.9898 + n * 78.233) * 43758.5453; return x - Math.floor(x); };
+  const blank = h(0) < 0.12;
+  const indent = Math.floor(h(1) * 4) % 4 === 3 ? 1 : Math.floor(h(1) * 3);
+  return { indent: blank ? 0 : indent, width: blank ? 0 : 0.18 + h(2) * 0.62, colour: Math.floor(h(3) * CODE_COLOURS.length) };
+}
+/** Rows visible at a given amount of typing (in lines); the last row is still being typed. */
+export function codeRows(typed: number) {
+  const last = Math.floor(typed), progress = typed - last;
+  return Array.from({ length: CODE_ROWS }, (_, row) => {
+    const index = last - (CODE_ROWS - 1) + row, line = codeLine(index);
+    return { row, ...line, width: row === CODE_ROWS - 1 ? line.width * progress : line.width };
+  });
+}
+
+export type StudyView = { fov: number; position: Vec3; target: Vec3; centre: [number, number] };
+/** Desktop keeps the left third for the story; portrait lifts the study above it. */
+export function studyView(width: number, height: number): StudyView {
+  const aspect = width / Math.max(1, height);
+  if (width < 700 || aspect < 0.9) {
+    // Narrow screens are limited by width: back away until the window and the student fit side to side.
+    const d = Math.max(4.9, 2.5 / aspect);
+    return { fov: 46, position: [-0.2 + 0.52 * d, 1.3 + 0.1 * d, -2.0 + 0.85 * d], target: [-0.2, 1.3, -2.0], centre: [0.5, 0.27] };
+  }
+  // Three-quarters from behind the right shoulder: the profile, the typing hands, the screen and the window.
+  return { fov: 34, position: [1.85, 1.78, 1.85], target: [-0.25, 1.42, -2.05], centre: [0.58, 0.5] };
+}
+export function studyCamera(view: StudyView, excursion: number, sway: [number, number]) {
   const [px, py, pz] = view.position, [tx, ty, tz] = view.target;
   return {
-    position: [px + sway[0] * 3.4, py + excursion * 52 - sway[1] * 1.8, pz + excursion * 26] as Vec3,
-    target: [tx + sway[0] * 0.6, ty + excursion * 36, tz] as Vec3,
+    position: [px + sway[0] * 0.25 + excursion * 1.2, py + sway[1] * 0.12 + excursion * 1.6, pz + excursion * 3.5] as Vec3,
+    target: [tx + sway[0] * 0.05, ty + excursion * 0.4, tz] as Vec3,
   };
 }
-
-/** Coarse mosaic cell in CSS pixels; cells start chunky while landing and resolve into tiles. */
-export function granadaCell(width: number, excursion: number) {
-  const base = width < 700 ? 5 : 6;
-  return base * (1 + 6 * excursion * excursion);
-}
-
-/** The hacker emblem: a Conway glider, rows top to bottom. `gliderCells` orients it towards one of four diagonals. */
-export const GLIDER = [".#.", "..#", "###"];
-export function gliderCells(x: number, y: number, direction: number) {
-  const cells: [number, number][] = [];
-  GLIDER.forEach((row, r) => row.split("").forEach((c, k) => {
-    if (c !== "#") return;
-    const dx = direction & 1 ? 2 - k : k, dy = direction & 2 ? r : 2 - r;
-    cells.push([x + dx, y + dy]);
-  }));
-  return cells;
-}
-/**
- * Glider orientation for a heading in screen space (y up). Orientation 0 travels right and down;
- * bit 0 mirrors it leftwards and bit 1 upwards.
- */
-export const gliderDirection = (dx: number, dy: number) => (dx < 0 ? 1 : 0) | (dy > 0 ? 2 : 0);
-/** Reference Game of Life step on a torus, used by tests to pin the GPU rule. */
-export function lifeStep(alive: Set<string>, width: number, height: number) {
-  const counts = new Map<string, number>();
-  for (const key of alive) {
-    const [x, y] = key.split(",").map(Number);
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!dx && !dy) continue;
-      const k = `${(x + dx + width) % width},${(y + dy + height) % height}`;
-      counts.set(k, (counts.get(k) ?? 0) + 1);
-    }
-  }
-  const next = new Set<string>();
-  counts.forEach((n, k) => { if (n === 3 || (n === 2 && alive.has(k))) next.add(k); });
-  return next;
-}
-
-/** The pomegranate moon of Granada (and of the UGR emblem), above Sierra Nevada. */
-export const MOON = { position: [95, 100, -330] as Vec3, radius: 17 };
-/** Portrait framing looks down on the Alhambra, so the moon sits lower and nearer the centre there. */
-export function moonPosition(width: number, height: number): Vec3 {
-  return width < 700 || width / Math.max(1, height) < 0.9 ? [22, 26, -230] : MOON.position;
+/** Halftone line spacing in CSS pixels; arrival starts coarse and resolves. */
+export function studyCell(width: number, excursion: number) {
+  return (width < 700 ? 5 : 6) * (1 + 6 * excursion * excursion);
 }
