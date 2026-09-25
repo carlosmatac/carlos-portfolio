@@ -198,6 +198,7 @@ export default function DescentExperience() {
       stage.style.setProperty("--seek-opacity", seekOpacity.toFixed(4));
       const stopId = frame.timeline.phase.kind === "intro" ? "intro" : frame.earth.overview > 0 ? "earth" : places[frame.earth.active].id;
       stage.dataset.stop = stopId;
+      stage.dataset.city = frame.timeline.city?.id ?? "";
       stage.style.setProperty("--identity-opacity", frame.identity.toFixed(4));
       stage.style.setProperty("--prompt-opacity", frame.prompt.toFixed(4));
       stage.style.setProperty("--fallback-zoom", `${1 + frame.zoom * 2.2}`);
@@ -298,6 +299,7 @@ export default function DescentExperience() {
           <div className="fallback-city-cloud fallback-city-cloud-front" />
           <div className="fallback-city-cloud fallback-city-cloud-near" />
         </div>
+        <div className="fallback-granada" aria-hidden="true" />
         <div className="earth-shade" aria-hidden="true" />
         <p className="earth-intro" aria-hidden="true">A few places that made me.</p>
         <div className="fallback-passage" aria-hidden="true" />

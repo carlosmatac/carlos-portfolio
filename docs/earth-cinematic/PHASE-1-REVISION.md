@@ -11,6 +11,18 @@ La petición posterior de Carlos añade una parada estable `#earth` entre la int
 - Regeneración de volúmenes: `node art-source/clouds/build-volume.mjs`. Dimensiones, bytes y hashes están en `art-source/clouds/assets.json`. El cargador limita el tamaño descomprimido y cancela descargas descartadas.
 - Verificación: `npm test -- --run`, `npx eslint src/components/descent art-source/clouds/build-volume.mjs`, `npm run build`. Los tests de shaders requieren además navegador con WebGL; los mocks unitarios no compilan GLSL.
 
+## Granada — diorama procedural en Three.js
+
+Granada es la segunda escena urbana (`granada-sky`); Brno, Múnich y Madrid siguen sobre la Tierra. Sustituye al matte proyectado anterior: **no carga imágenes**. Todo se genera en `cities/create-granada.ts` a partir del modelo puro `cities/granada-art.ts`.
+
+- Vista desde el Albaicín: colina de la Sabika con la Alhambra (Alcazaba y Torre de la Vela con campanario, Comares, Carlos V con patio circular, Santa María, murallas almenadas y torres, Generalife), valle del Darro con farolas, Albaicín instanciado con ventanas cálidas, Vega con luces y Sierra Nevada con nieve irregular.
+- Estética de maqueta topográfica: curvas de nivel en el relieve (desvanecidas a distancia y en ángulos rasantes), luz de luna fría y focos cálidos sobre la Alhambra. Todo con shaders propios; el compositor aplica tone mapping y conversión de color una sola vez.
+- Interacción: el cursor (ratón o lápiz) mueve una linterna que calienta murallas y curvas de nivel, despeja la niebla y proyecta una celosía nazarí de estrellas de ocho puntas. La cámara hace un paralaje suave con el cursor. Con pantalla táctil, o sin cursor, la linterna patrulla la muralla norte. El picking combina un ray-march sobre `terrainHeight` con un raycast contra la malla de la Alhambra.
+- Movimiento reducido: sin paralaje, patrulla, balanceo de cipreses, parpadeo ni deriva de la niebla. La cámara de llegada y salida es función pura de `arrivalT`/`departureT`, así que el recorrido es reversible.
+- La escena solo espera al volumen de nubes compartido del paso entre mundos. El fallback HTML es un degradado CSS sin imágenes.
+- Tests: `src/components/descent/__tests__/granada.test.ts` (encuadre de escritorio y móvil, relieve, picking, cursor y táctil, reversibilidad, liberación de recursos).
+- Los anchors normalizados admiten el error de redondeo de coma flotante para no dejar Granada artificialmente en el último instante de llegada.
+
 ## Revisión original
 
 

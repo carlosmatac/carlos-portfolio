@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { earthAt, stopProgress } from "../earth-journey";
 import { adjacentStop, createFlight, flightPosition, WheelGesture, createSeek, seekFrame } from "../scroll-journey";
 
-const [st, gr, br, , madrid] = [0, 1, 2, 3, 4].map(stopProgress);
+const [st, gr, br, mu, madrid] = [0, 1, 2, 3, 4].map(stopProgress);
 
 describe("A gesture visits one stop", () => {
   it("a very strong wheel impulse cannot skip Granada from St. Louis", () => {
@@ -38,24 +38,24 @@ describe("A gesture visits one stop", () => {
 
 describe("Timed, reversible flights", () => {
   it("takes 4.8 seconds between cities and lands exactly at the next stop", () => {
-    const flight = createFlight(gr, br, 1000);
-    expect(flightPosition(flight, 1000)).toBe(gr);
-    expect(flightPosition(flight, 3400)).toBeCloseTo((flight.segments[0].from + br) / 2);
-    expect(flightPosition(flight, 5800)).toBe(br);
-    expect(flightPosition(flight, 20000)).toBe(br);
-    expect(flightPosition(flight, 1100)).toBeGreaterThan(gr + 0.001);
+    const flight = createFlight(br, mu, 1000);
+    expect(flightPosition(flight, 1000)).toBe(br);
+    expect(flightPosition(flight, 3400)).toBeCloseTo((flight.segments[0].from + mu) / 2);
+    expect(flightPosition(flight, 5800)).toBe(mu);
+    expect(flightPosition(flight, 20000)).toBe(mu);
+    expect(flightPosition(flight, 1100)).toBeGreaterThan(br + 0.001);
   });
 
   it("has identical trajectories at different frame rates and in reverse", () => {
-    const forward = createFlight(gr, br, 0);
-    const reverse = createFlight(br, gr, 0);
+    const forward = createFlight(br, mu, 0);
+    const reverse = createFlight(mu, br, 0);
     for (const elapsed of [100, 500, 1000, 2400, 3500]) {
-      expect(flightPosition(forward, elapsed) + flightPosition(reverse, elapsed)).toBeCloseTo(forward.segments[0].from + br);
+      expect(flightPosition(forward, elapsed) + flightPosition(reverse, elapsed)).toBeCloseTo(forward.segments[0].from + mu);
     }
     for (const hz of [30, 60, 120]) {
       let value = 0;
       for (let frame = 0; frame <= hz * 4.8; frame++) value = flightPosition(forward, frame * 1000 / hz);
-      expect(value).toBeCloseTo(br);
+      expect(value).toBeCloseTo(mu);
     }
   });
 });

@@ -1,0 +1,67 @@
+{
+  "source": "design/granada-concepts/01-alhambra-sobre-las-nubes.png",
+  "source_sha256": "df4c86aa2834e3359c1abcd30e8b84da5be0f7021d8ce52b095613c621beda02",
+  "provenance": "User-selected generated concept; layered camera projection, not a reconstructed architectural model.",
+  "editable_scene": "granada-clouds.blend",
+  "generator": "prepare.py, build.py, export.py",
+  "layers": [
+    "fixed architectural and mountain matte",
+    "masked cloud advection",
+    "independent animated flag mesh",
+    "runtime volumetric foreground mist"
+  ],
+  "flag_anchor_pixels": [
+    938,
+    50
+  ],
+  "flag_size_pixels": [
+    20,
+    12
+  ],
+  "animation": "Analytic pinned cloth, reversible absolute time; cloud UV drift. No video or cloth simulation cache.",
+  "assets": [
+    {
+      "file": "public/images/cities/granada/plate.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 334020,
+      "sha256": "f976423016d95ca66d2c3fbbafb826565baf0b0ce75882d13ecf90b77568263d"
+    },
+    {
+      "file": "public/images/cities/granada/plate-mobile.webp",
+      "width": 1100,
+      "height": 619,
+      "bytes": 191132,
+      "sha256": "714a9ca050ae219cedbd83dbd43be5e715029b70b857455bc26f1745eaf949ce"
+    },
+    {
+      "file": "public/images/cities/granada/cloud-mask.webp",
+      "width": 836,
+      "height": 471,
+      "bytes": 2538,
+      "sha256": "6a114b10d43c5da2f80b2bcbedbd06945ea74212887a206f02a8252cb3e854b9"
+    },
+    {
+      "file": "public/images/cities/granada/flag.webp",
+      "width": 192,
+      "height": 112,
+      "bytes": 1962,
+      "sha256": "e3d18533fc035cee1b58787bb22d2480bd2ce983ab9e6f2aab03fa4e92738d21"
+    },
+    {
+      "file": "public/images/cities/granada/poster.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 334332,
+      "sha256": "295a25cf1d98c5b22973624e0bc466e03f20e0455b19b0b8ebe6910ccce32bc4"
+    },
+    {
+      "file": "public/images/cities/granada/poster-mobile.webp",
+      "width": 1100,
+      "height": 619,
+      "bytes": 191130,
+      "sha256": "e9eb62fef4b7eef723e277670d949a786e1ae53f7d7d5b4bc045f56ca4926a9a"
+    }
+  ],
+  "renderer": "Blender 5.2.2 / Cycles CPU / 16 samples / Standard color transform / camera-projected matte and cloth mesh"
+}

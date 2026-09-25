@@ -1,7 +1,7 @@
 import { places } from "@/content/places";
 
 export type CityId = typeof places[number]["id"];
-export type CitySceneId = "st-louis-sky";
+export type CitySceneId = "st-louis-sky" | "granada-sky";
 export type JourneyConfig = {
   introH: number;
   revealH: number;
@@ -23,5 +23,5 @@ export const journeyConfig: JourneyConfig = {
   departureH: 1.2,
   transferH: 2.32,
   endingH: 0.28,
-  stops: places.map(place => ({ cityId: place.id, sceneId: place.id === "st-louis" ? "st-louis-sky" : null })),
+  stops: places.map(place => ({ cityId: place.id, sceneId: place.id === "st-louis" ? "st-louis-sky" : place.id === "granada" ? "granada-sky" : null })),
 };

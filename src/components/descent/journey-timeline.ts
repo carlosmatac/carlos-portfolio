@@ -64,7 +64,7 @@ export const anchorProgress = (id: string) => Object.hasOwn(JOURNEY.anchors, id)
 
 export function sampleJourney(positionH: number, timeline = JOURNEY, reduced = false) {
   const position = Math.max(0, Math.min(timeline.totalH, positionH));
-  const phase = timeline.phases.find(p => position < p.endH) ?? timeline.phases.at(-1)!;
+  const phase = timeline.phases.find(p => position < p.endH - 1e-10) ?? timeline.phases.at(-1)!;
   const t = clamp01((position - phase.startH) / phase.weightH);
   const { kind, cityIndex: from, nextCityIndex } = phase;
   const introT = kind === "intro" ? t : 1;

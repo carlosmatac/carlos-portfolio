@@ -219,3 +219,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 [data-renderer="fallback"][data-phase="earth-observe"] .fallback-city,
 [data-city-asset="loading"] .fallback-city,
 [data-city-asset="error"] .fallback-city { display: block; }
+
+.fallback-granada { display: none; position: absolute; inset: 0; opacity: var(--city-opacity, 0); pointer-events: none;
+  background: radial-gradient(ellipse 34% 9% at 64% 60%, #d98a4a33, transparent), linear-gradient(#020309, #070a16 52%, #0d1122 60%, #030407 74%); }
+.descent-viewport[data-city="granada"][data-renderer] .fallback-city { display: none; }
+[data-city="granada"][data-renderer="fallback"] .fallback-granada,
+[data-city="granada"][data-city-asset="loading"] .fallback-granada,
+[data-city="granada"][data-city-asset="error"] .fallback-granada { display: block; }

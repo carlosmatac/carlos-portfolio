@@ -5,7 +5,7 @@ import { compileJourney, JOURNEY, sampleJourney, travelSegments } from "../journ
 
 describe("Compiled journey", () => {
   it("derives ordered anchors, contiguous phases and length from a single configuration", () => {
-    expect(JOURNEY.totalH).toBeCloseTo(20.6);
+    expect(JOURNEY.totalH).toBeCloseTo(23.6);
     expect(Object.keys(JOURNEY.anchors)).toEqual(["earth", ...places.map(place => place.id)]);
     JOURNEY.phases.forEach((phase, i) => {
       expect(phase.endH - phase.startH).toBeCloseTo(phase.weightH);
@@ -15,15 +15,15 @@ describe("Compiled journey", () => {
       const sample = sampleJourney(JOURNEY.anchors[place.id]);
       expect(sample.earth.active).toBe(index);
       expect(sample.earth.text).toBe(1);
-      expect(sample.phase.kind).toBe(index ? "earth-visit" : "visit");
-      expect(sample.blend).toBe(index ? 0 : 1);
+      expect(sample.phase.kind).toBe(index < 2 ? "visit" : "earth-visit");
+      expect(sample.blend).toBe(index < 2 ? 1 : 0);
     });
   });
 
-  it("only enables St. Louis and omits urban phases when the capability is absent", () => {
+  it("enables St. Louis and Granada and omits urban phases when the capability is absent", () => {
     const urban = JOURNEY.phases.filter(p => ["arrival", "departure", "visit"].includes(p.kind));
-    expect(urban).toHaveLength(3);
-    expect(urban.every(p => p.cityId === "st-louis")).toBe(true);
+    expect(urban).toHaveLength(6);
+    expect(urban.every(p => ["st-louis", "granada"].includes(p.cityId))).toBe(true);
     const earthOnly = compileJourney({ ...journeyConfig, stops: journeyConfig.stops.map(s => ({ ...s, sceneId: null })) });
     expect(earthOnly.totalH).toBeCloseTo(17.6);
     expect(earthOnly.phases.some(p => p.kind === "arrival")).toBe(false);
@@ -76,10 +76,10 @@ describe("Stateless sampling", () => {
   });
 
   it("does not spend guided flight time in stationary reading phases", () => {
-    const from = JOURNEY.anchors.granada / JOURNEY.totalH;
-    const to = JOURNEY.anchors.brno / JOURNEY.totalH;
+    const from = JOURNEY.anchors.brno / JOURNEY.totalH;
+    const to = JOURNEY.anchors.munich / JOURNEY.totalH;
     const segments = travelSegments(from, to);
-    const transfer = JOURNEY.phases.find(p => p.kind === "transfer" && p.cityId === "granada")!;
+    const transfer = JOURNEY.phases.find(p => p.kind === "transfer" && p.cityId === "brno")!;
     expect(segments).toEqual([{ from: transfer.startH / JOURNEY.totalH, to }]);
     expect(travelSegments(to, from)).toEqual([{ from: to, to: transfer.startH / JOURNEY.totalH }]);
   });
