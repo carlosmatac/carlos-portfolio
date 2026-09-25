@@ -88,17 +88,61 @@ describe("Guided scroll integration", () => {
     expect(stage.getAttribute("data-travelling")).toBe("false");
   });
 
-  it("consumes one vertical swipe while preserving pinch gestures", async () => {
+  it("never blocks a touch, and completes a swipe to the next station once it comes to rest", async () => {
     const { stage } = await mount();
-    fireEvent.touchStart(stage, { touches: [{ clientX: 150, clientY: 500 }] });
-    fireEvent.touchMove(stage, { touches: [{ clientX: 150, clientY: 350 }] });
-    advance(5200);
-    fireEvent.touchMove(stage, { touches: [{ clientX: 150, clientY: 50 }] });
-    advance(5200);
-    expect(stage.getAttribute("data-stop")).toBe("granada");
+    const swipe = (toH: number) => {
+      const start = new TouchEvent("touchstart", { bubbles: true, cancelable: true });
+      stage.dispatchEvent(start);
+      const move = new TouchEvent("touchmove", { bubbles: true, cancelable: true });
+      stage.dispatchEvent(move);
+      expect([start.defaultPrevented, move.defaultPrevented]).toEqual([false, false]);
+      scrollY = Math.round(pageHeight * toH / JOURNEY.totalH);
+      fireEvent.scroll(window);
+      fireEvent.touchEnd(stage);
+      advance(7000);
+      return stage.getAttribute("data-stop");
+    };
+    // A short swipe leaves St. Louis; the journey carries on to Granada.
+    expect(swipe(JOURNEY.anchors["st-louis"] + 1)).toBe("granada");
+    expect(scrollY / pageHeight).toBeCloseTo(stopProgress(1), 3);
+    // A short swipe back returns to St. Louis.
+    expect(swipe(JOURNEY.anchors.granada - 1)).toBe("st-louis");
+    expect(scrollY / pageHeight).toBeCloseTo(stopProgress(0), 3);
+    // Coming to rest on a station needs nothing more.
+    expect(swipe(JOURNEY.anchors.brno)).toBe("brno");
+    expect(stage.getAttribute("data-travelling")).toBe("false");
     const pinch = new WheelEvent("wheel", { deltaY: 100, ctrlKey: true, cancelable: true });
     window.dispatchEvent(pinch);
     expect(pinch.defaultPrevented).toBe(false);
+  });
+
+  it("gives a touch-started flight back to the finger, and ignores the browser's small scroll corrections", async () => {
+    const { stage } = await mount();
+    fireEvent.touchStart(window);
+    scrollY = Math.round(pageHeight * (JOURNEY.anchors["st-louis"] + 1) / JOURNEY.totalH);
+    fireEvent.scroll(window);
+    fireEvent.touchEnd(window);
+    advance(1500);
+    expect(stage.getAttribute("data-travelling")).toBe("true");
+    scrollY += 5;
+    fireEvent.scroll(window);
+    advance(16);
+    expect(stage.getAttribute("data-travelling")).toBe("true");
+    fireEvent.touchStart(window);
+    advance(16);
+    expect(stage.getAttribute("data-travelling")).toBe("false");
+  });
+
+  it("returns to the start from the logo once the journey has begun", async () => {
+    const { container, stage } = await mount();
+    const home = container.querySelector<HTMLAnchorElement>(".home-logo")!;
+    expect(home.inert).toBe(false);
+    fireEvent.click(home);
+    advance(1000);
+    expect(scrollY).toBe(0);
+    expect(stage.getAttribute("data-phase")).toBe("intro");
+    expect(location.hash).toBe("");
+    expect(home.inert).toBe(true);
   });
 
   it("leaves reduced-motion scrolling native and does not trap keyboard focus", async () => {

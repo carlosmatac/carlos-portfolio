@@ -14,11 +14,16 @@ export function journeyAt(progress: number, reducedMotion = false) {
   const fall = clamp01((intro - 0.32) / 0.56);
   const identity = 1 - smoothstep(0.02, 0.14, intro);
   const speed = Math.pow(1 - fall, 3) * smoothstep(0.15, 0.32, intro);
+  // The warp and the Earth reveal are one approach, so the camera brakes only once.
+  const [introPhase, revealPhase] = JOURNEY.phases;
+  const approachStart = introPhase.startH + introPhase.weightH * 0.32;
+  const u = clamp01((timeline.positionH - approachStart) / (revealPhase.endH - approachStart));
   return {
     progress: p,
     zoom: reducedMotion ? 0 : zoom,
     fall,
     distance: reducedMotion ? 0 : 1 - Math.pow(1 - fall, 4),
+    approach: reducedMotion ? 0 : 1 - Math.pow(1 - u, 3),
     speed: reducedMotion ? 0 : speed,
     identity,
     prompt: 1 - smoothstep(0.01, 0.07, intro),
