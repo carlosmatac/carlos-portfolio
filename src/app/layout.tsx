@@ -1,10 +1,11 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { site } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Carlos Mata — Software & Data",
+  title: "Carlos Mata",
   description:
     "Software, data, and a little curiosity. Explore the work of Carlos Mata, Software & Data Engineer in Madrid.",
   icons: {
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={GeistSans.variable}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>{children}</body>
     </html>
   );

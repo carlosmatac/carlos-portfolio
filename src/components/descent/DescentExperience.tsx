@@ -10,6 +10,10 @@ import { ST_LOUIS_ART, stLouisComposition } from "./cities/st-louis-art";
 import { LOGO } from "./intro-logo-art";
 import { adjacentStop, JOURNEY_STOPS, createFlight, flightPosition, WheelGesture, createSeek, seekFrame, type JourneySeek, type JourneyFlight } from "./scroll-journey";
 import type { DescentScene } from "./create-descent";
+import { JOURNEY_STOP_EVENT, STATIONS } from "@/content/stations";
+
+/** Phones and tablets travel with buttons: native scrolling could leave them resting inside a transition. */
+export const STEPPED_QUERY = "(hover: none) and (pointer: coarse)";
 
 export default function DescentExperience() {
   const journey = useRef<HTMLElement>(null);
@@ -24,12 +28,15 @@ export default function DescentExperience() {
     const display = identity.current!;
     const chapters = Array.from(story.current!.querySelectorAll<HTMLElement>(".earth-chapter"));
     const navigation = Array.from(stage.querySelectorAll<HTMLAnchorElement>(".journey-nav a"));
-    const tourControls = Array.from(stage.querySelectorAll<HTMLElement>(".journey-nav, .earth-footer, .home-logo"));
-    const homeLink = stage.querySelector<HTMLAnchorElement>(".home-logo")!;
+    const tourControls = Array.from(stage.querySelectorAll<HTMLElement>(".journey-nav, .earth-footer, .station-controls"));
+    const nextButton = stage.querySelector<HTMLButtonElement>(".station-next")!;
+    const nextLabel = nextButton.querySelector<HTMLElement>(".station-next-name")!;
+    const backButton = stage.querySelector<HTMLButtonElement>(".station-back")!;
     const fallbackCity = stage.querySelector<HTMLElement>(".fallback-city")!;
     const fallbackArch = fallbackCity.querySelector<HTMLElement>(".fallback-city-arch")!;
     const fallbackClouds = Array.from(fallbackCity.querySelectorAll<HTMLElement>(".fallback-city-cloud"));
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const stepped = window.matchMedia(STEPPED_QUERY);
     let scene: DescentScene | null = null;
     let disposed = false, raf = 0, last = 0, progress = 0, target = 0;
     let pageHeight = 1, sectionTop = 0, lastRender = 0;
@@ -37,6 +44,12 @@ export default function DescentExperience() {
     let seek: JourneySeek | null = null;
     let measured = false;
     let writtenScroll = -1;
+    let announcedStop = "";
+    /** Mirrors the journey into the page scroll, except in stepped mode where the page never scrolls. */
+    function writeScroll(position: number) {
+      writtenScroll = sectionTop + position * pageHeight;
+      if (!stepped.matches) window.scrollTo({ top: writtenScroll, behavior: "instant" });
+    }
     const wheelGesture = new WheelGesture();
     let hiddenAt = 0;
     // Touch scrolls natively; once the finger and momentum stop, the journey finishes the step.
@@ -57,8 +70,7 @@ export default function DescentExperience() {
         target = (flight ?? seek)!.to;
         progress = target;
         flight = null; seek = null;
-        writtenScroll = sectionTop + progress * pageHeight;
-        window.scrollTo({ top: writtenScroll, behavior: "instant" });
+        writeScroll(progress);
       }
       measure();
     }
@@ -68,8 +80,7 @@ export default function DescentExperience() {
       target = progress;
       if (reduced.matches) {
         progress = target = destination;
-        writtenScroll = sectionTop + destination * pageHeight;
-        window.scrollTo({ top: writtenScroll, behavior: "instant" });
+        writeScroll(destination);
         return;
       }
       if (Math.abs(progress - destination) < 0.0001) return;
@@ -103,6 +114,7 @@ export default function DescentExperience() {
       else if (!busy()) moveTo(adjacentStop(progress, direction));
     }
     function onTouchStart() {
+      if (stepped.matches) return;
       touching = true;
       touchedAt = performance.now();
       swiped = false; swipeDirection = 0;
@@ -110,6 +122,7 @@ export default function DescentExperience() {
       if (flight || seek) { flight = null; seek = null; target = progress; }
     }
     function onTouchEnd() {
+      if (stepped.matches) return;
       touching = false;
       touchedAt = performance.now();
     }
@@ -120,19 +133,35 @@ export default function DescentExperience() {
       if (!swipeDirection || JOURNEY_STOPS.some(stop => Math.abs(stop - target) * JOURNEY.totalH < 0.15)) return;
       moveTo(adjacentStop(target, swipeDirection));
     }
+    /** One station along the way; the last station leads back to the Earth. */
+    function step(direction: number) {
+      if (busy()) return;
+      if (direction > 0 && Math.abs(progress - JOURNEY_STOPS.at(-1)!) < 1e-6) moveTo(EARTH_STOP, true);
+      else moveTo(adjacentStop(progress, direction));
+    }
     function onNavigate(event: MouseEvent) {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href^="#"]') : null;
-      if (link?.hash === "#top") {
+      const element = event.target instanceof Element ? event.target : null;
+      const control = element?.closest<HTMLElement>("[data-journey-step]");
+      if (control && stage.contains(control)) {
+        event.preventDefault();
+        step(Number(control.dataset.journeyStep));
+        return;
+      }
+      // Header links (/#granada) and the in-stage navigation (#granada) share one entry point.
+      const link = element?.closest<HTMLAnchorElement>('a[href^="#"], a[data-journey-target]');
+      if (!link || link.pathname !== location.pathname) return;
+      const id = link.dataset.journeyTarget ?? link.hash.slice(1);
+      if (id === "top") {
         event.preventDefault();
         history.replaceState(null, "", location.pathname + location.search);
         moveTo(0, true);
         return;
       }
-      const destination = anchorProgress(link?.hash.slice(1) ?? "");
+      const destination = anchorProgress(id);
       if (destination === undefined) return;
       event.preventDefault();
-      history.replaceState(null, "", link!.hash);
+      history.replaceState(null, "", `#${id}`);
       moveTo(destination, true);
     }
 
@@ -159,15 +188,14 @@ export default function DescentExperience() {
         cloud.style.width = `${layout.width * 100}%`;
       });
       if (measured && (pageHeight !== previousHeight || sectionTop !== previousTop)) {
-        writtenScroll = sectionTop + (busy() ? progress : target) * pageHeight;
-        window.scrollTo({ top: writtenScroll, behavior: "instant" });
+        writeScroll(busy() ? progress : target);
       } else if (!measured) {
         target = Math.max(0, Math.min(1, (window.scrollY - sectionTop) / pageHeight));
         measured = true;
       }
     }
     function onScroll() {
-      if (Math.abs(window.scrollY - writtenScroll) < 2) return;
+      if (stepped.matches || Math.abs(window.scrollY - writtenScroll) < 2) return;
       // Mobile browsers nudge programmatic scrolls (rounding, toolbar); only a finger may interrupt a touch-started flight.
       if (busy() && touchScrolling() && !touching && Math.abs(window.scrollY - writtenScroll) < window.innerHeight / 2) return;
       // Scrollbar dragging, browser history and native accessibility navigation remain usable.
@@ -196,14 +224,12 @@ export default function DescentExperience() {
         seekOpacity = switching ? 1 : frame.opacity;
         if (switching) seek.started = now - 180;
         progress = target = frame.position;
-        writtenScroll = sectionTop + progress * pageHeight;
-        window.scrollTo({ top: writtenScroll, behavior: "instant" });
+        writeScroll(progress);
         if (frame.done && !switching) seek = null;
       } else if (flight && !reduced.matches) {
         progress = flightPosition(flight, now);
         target = progress;
-        writtenScroll = sectionTop + progress * pageHeight;
-        window.scrollTo({ top: writtenScroll, behavior: "instant" });
+        writeScroll(progress);
         if (now >= flight.started + flight.duration) {
           flight = null;
         }
@@ -219,6 +245,15 @@ export default function DescentExperience() {
       stage.style.setProperty("--seek-opacity", seekOpacity.toFixed(4));
       const stopId = frame.timeline.phase.kind === "intro" ? "intro" : frame.earth.overview > 0 ? "earth" : places[frame.earth.active].id;
       stage.dataset.stop = stopId;
+      if (stopId !== announcedStop) {
+        announcedStop = stopId;
+        document.documentElement.dataset.journeyStop = stopId;
+        window.dispatchEvent(new CustomEvent(JOURNEY_STOP_EVENT, { detail: stopId }));
+        const index = STATIONS.findIndex(station => station.id === stopId);
+        const last = index === STATIONS.length - 1;
+        nextLabel.textContent = last ? "Back to Earth" : STATIONS[index + 1].label;
+        nextButton.dataset.last = String(last);
+      }
       stage.dataset.city = frame.timeline.city?.id ?? "";
       stage.style.setProperty("--identity-opacity", frame.identity.toFixed(4));
       stage.style.setProperty("--prompt-opacity", frame.prompt.toFixed(4));
@@ -247,8 +282,9 @@ export default function DescentExperience() {
         control.inert = frame.earth.navigation < 0.5;
         control.setAttribute("aria-hidden", String(frame.earth.navigation < 0.5));
       });
-      homeLink.tabIndex = frame.earth.navigation > 0.5 ? 0 : -1;
       stage.dataset.travelling = String(travelling);
+      nextButton.setAttribute("aria-disabled", String(travelling));
+      backButton.setAttribute("aria-disabled", String(travelling));
       if (travelling || progress !== target || now - lastRender >= 1000 / 30) {
         scene?.render(frame, now / 1000, reduced.matches);
         lastRender = now;
@@ -258,8 +294,7 @@ export default function DescentExperience() {
     const initialDestination = anchorProgress(location.hash.slice(1));
     if (initialDestination !== undefined) {
       progress = target = initialDestination;
-      writtenScroll = sectionTop + progress * pageHeight;
-      window.scrollTo({ top: writtenScroll, behavior: "instant" });
+      writeScroll(progress);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", measure);
@@ -268,10 +303,11 @@ export default function DescentExperience() {
     window.addEventListener("keydown", onKey);
     document.addEventListener("visibilitychange", onVisibility);
     reduced.addEventListener("change", onMotionPreference);
+    stepped.addEventListener("change", measure);
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
     window.addEventListener("touchcancel", onTouchEnd, { passive: true });
-    stage.addEventListener("click", onNavigate);
+    document.addEventListener("click", onNavigate);
     const observer = new ResizeObserver(measure); observer.observe(section);
     raf = requestAnimationFrame(draw);
     import("./create-descent").then(({ createDescent }) => {
@@ -293,10 +329,12 @@ export default function DescentExperience() {
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("visibilitychange", onVisibility);
       reduced.removeEventListener("change", onMotionPreference);
+      stepped.removeEventListener("change", measure);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("touchcancel", onTouchEnd);
-      stage.removeEventListener("click", onNavigate);
+      document.removeEventListener("click", onNavigate);
+      delete document.documentElement.dataset.journeyStop;
       observer.disconnect(); scene?.dispose();
     };
   }, []);
@@ -308,14 +346,11 @@ export default function DescentExperience() {
     } as CSSProperties}>
       <div className="descent-viewport" ref={viewport} data-renderer="fallback" data-phase="intro">
         <div className="descent-canvas" ref={host} />
-        <a className="home-logo" href="#top" aria-label="Carlos Mata — back to start" inert aria-hidden="true" tabIndex={-1}>
-          <svg viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
-        </a>
         <svg className="intro-logo" viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
         <div className="intro-identity" ref={identity}>
           <h1>Carlos Mata</h1>
           <p className="intro-role">{site.headlineTop}</p>
-          <a className="scroll-invitation" href="#earth">Scroll to start the journey<span className="scroll-stem" aria-hidden="true" /></a>
+          <a className="scroll-invitation" href="#earth" data-journey-step="1"><span className="invitation-scroll">Scroll to start the journey</span><span className="invitation-tap">Tap to start the journey</span><span className="scroll-stem" aria-hidden="true" /></a>
         </div>
         <div className="fallback-earth" aria-hidden="true" />
         <div className="fallback-city" aria-hidden="true">
@@ -349,6 +384,16 @@ export default function DescentExperience() {
           <a href="#earth" tabIndex={-1}><span className="journey-dot" aria-hidden="true" /><span>Earth</span></a>
           {places.map(place=><a key={place.id} href={`#${place.id}`} tabIndex={-1}><span className="journey-dot" aria-hidden="true" /><span>{place.city}</span></a>)}
         </nav>
+        <div className="station-controls" inert aria-hidden="true">
+          <button type="button" className="station-back" data-journey-step="-1" aria-label="Previous station">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>
+          </button>
+          <button type="button" className="station-next" data-journey-step="1">
+            <span className="station-next-kicker">Go to the next station</span>
+            <span className="station-next-name">Earth</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 3.5 13 8l-4.5 4.5" /></svg>
+          </button>
+        </div>
         <div className="earth-footer" inert aria-hidden="true"><span>SCROLL TO TRAVEL</span><a href="/textures/earth/ATTRIBUTION.md" target="_blank" rel="noopener noreferrer">Earth imagery · Solar System Scope</a></div>
         <div className="scene-vignette" aria-hidden="true" />        <div className="journey-seek" aria-hidden="true" />
       </div>

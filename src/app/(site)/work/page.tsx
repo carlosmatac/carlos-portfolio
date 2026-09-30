@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import WorkBoard from "@/components/work/WorkBoard";
 
-/** La antigua ruta /work ahora es una sección de la home. */
-export default function WorkPage(): never {
-  redirect("/#work");
+export const metadata: Metadata = {
+  title: "My work",
+  description: "Data platforms, integrations and side projects by Carlos Mata, laid out on an explorable board.",
+};
+
+export default function WorkPage() {
+  return <WorkBoard />;
 }

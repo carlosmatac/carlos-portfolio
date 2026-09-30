@@ -10,6 +10,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@xyflow/react": "12.11.6",
     "framer-motion": "^12.23.26",
     "geist": "^1.7.2",
     "next": "16.1.1",

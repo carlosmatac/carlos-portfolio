@@ -1,5 +1,10 @@
 export type CaseStudyLink = { label: string; href: string };
 
+/** Real imagery for a project; projects without it use a drawn placeholder. */
+export type ProjectMedia =
+  | { kind: "image"; src: string; alt: string; width: number; height: number }
+  | { kind: "video"; src: string; poster: string; alt: string; width: number; height: number };
+
 export type CaseStudy = {
   slug: string;
   title: string;
@@ -10,8 +15,11 @@ export type CaseStudy = {
   // Case-study metadata
   year: string;
   role: string;
-  status?: "Concept" | "Prototype" | "Shipped" | "MVP";
+  status?: "Concept" | "Prototype" | "Shipped" | "MVP" | "In progress";
   duration?: string;
+  /** The largest recent projects: shown bigger and first on the work board. */
+  featured?: boolean;
+  media?: ProjectMedia;
 
   // Content blocks
   context: string;
@@ -25,6 +33,117 @@ export type CaseStudy = {
 };
 
 export const projects: CaseStudy[] = [
+  {
+    slug: "aksum",
+    title: "Aksum",
+    oneLiner: "Internal knowledge platform that puts what an organisation knows to work",
+    tags: ["Next.js", "TypeScript", "Supabase", "pgvector", "OpenAI", "AssemblyAI"],
+    year: "2026",
+    role: "Co-founder",
+    status: "Shipped",
+    duration: "Since Feb 2026",
+    featured: true,
+    media: { kind: "image", src: "/images/work/aksum.webp", alt: "The aksum.ai home page: “What your organisation knows, finally put to work”", width: 1280, height: 800 },
+
+    context:
+      "Aksum turns interviews, transcripts, documents and conversations into structured knowledge that sales, strategy and communication teams can reuse. Built for media, consulting and research teams working in emerging markets, it prepares meeting briefs, answers questions grounded in the organisation's own sources and drafts reports.",
+    problem: [
+      "Critical knowledge is scattered across recordings, PDFs, notes and people's memories.",
+      "Generic chat assistants answer without the organisation's own sources, people or relationships.",
+      "Extracted information has to be trustworthy before it reaches a client.",
+    ],
+    approach: [
+      "Ingestion pipeline for audio and documents: transcription (AssemblyAI), extraction, chunking, embeddings and grounding.",
+      "Knowledge graph of people, companies, topics and relationships, with evidence and confidence, on PostgreSQL and pgvector.",
+      "Agentic RAG copilot that combines hybrid internal retrieval, graph-traversal tools and optional web search (Vercel AI SDK, OpenAI).",
+      "Human-in-the-loop review: transcript corrections, entity editing, aliases and merges, with safe reprocessing.",
+    ],
+    outcome: [
+      "Meeting briefs, grounded answers and templated reports with PDF export and sharing.",
+      "Multi-tenant workspaces with roles, invitations and row-level security on Supabase.",
+      "Live product at aksum.ai.",
+    ],
+    highlights: ["Knowledge Graph", "Agentic RAG", "Human-in-the-loop"],
+    links: [
+      { label: "Visit aksum.ai", href: "https://www.aksum.ai/" },
+      { label: "GitHub Repo", href: "https://github.com/carlosmatac/sovereign-data" },
+    ],
+    gallery: [],
+  },
+
+  {
+    slug: "zhivel",
+    title: "Zhivel",
+    oneLiner: "Agentic operations centre that manages a live crisis — HackSpain 2026",
+    tags: ["TypeScript", "React", "Express", "HappyRobot", "LLM agents", "SQLite"],
+    year: "2026",
+    role: "Frontend & product · team of 5",
+    status: "Prototype",
+    duration: "36-hour hackathon",
+    featured: true,
+    media: { kind: "video", src: "/videos/zhivel.mp4", poster: "/images/work/zhivel-poster.webp", alt: "Zhivel demo video", width: 1024, height: 576 },
+
+    context:
+      "Built in 36 hours by a team of five for the HappyRobot track of HackSpain 2026 (UPM–ETSIT): “Can AI manage a crisis?”. On a Grand Prix Sunday at MADRING, a water leak closes the main pavilion 45 minutes before opening, with 600 guests on their way. Zhivel's agents replan spaces, catering, shuttles and staff, and pick up the phone to negotiate the new plan.",
+    problem: [
+      "Six hundred guests without a venue, 45 minutes before opening.",
+      "Spaces, catering, transport and staff all depend on each other, and the north and south sites are not connected inside.",
+      "Suppliers can say no, so every plan must survive being rejected.",
+    ],
+    approach: [
+      "A coordinator agent proposes plans, executes actions and replans with every new fact; when a counterpart says no, the plan changes.",
+      "Four specialist agents (spaces, catering, transport, attendees) negotiate through real voice calls, SMS and email on the HappyRobot platform.",
+      "A deterministic world engine: gates with capacity and queues, shuttles on OSRM routes, deliveries, incidents and an accelerable clock.",
+      "I worked mainly on the operations panel: the live map of MADRING, the agents panel and the timeline, where a human approves or rejects each decision.",
+    ],
+    outcome: [
+      "A working demo you can phone, deployed on Vercel (frontend) and Railway (backend).",
+      "The human stays in command: critical decisions wait for approval.",
+      "Persistent state with a transactional queue and idempotent callbacks.",
+    ],
+    highlights: ["AI Agents", "Voice Calls", "Real-time Operations"],
+    links: [
+      { label: "Live demo", href: "https://zhivel.vercel.app/" },
+      { label: "GitHub Repo", href: "https://github.com/pdsdm/hackspain" },
+    ],
+    gallery: [],
+  },
+
+  {
+    slug: "andres-mata-arquitectura",
+    title: "Andrés Mata Arquitectura",
+    oneLiner: "Website for an architecture studio in Granada, working since 1993",
+    tags: ["React 19", "Vite", "Tailwind v4", "Motion", "Gemini API", "Vercel"],
+    year: "2026",
+    role: "Design & development",
+    status: "In progress",
+    featured: true,
+    media: { kind: "image", src: "/images/work/andres-mata-arquitectura.webp", alt: "The studio's home page: “Arquitectura que nace del lugar”, beside an animated grid of reference buildings", width: 1280, height: 800 },
+
+    context:
+      "A new website for an architecture studio that has worked in Granada since 1993, from village houses in the Alpujarra to housing blocks and hotels. The design language sits between whitewash and concrete, and every decision serves the real buildings.",
+    problem: [
+      "Decades of work lived on an outdated site, with low-resolution photos and old renders.",
+      "Technical drawings and plans had to stay exact; any image improvement could not invent geometry.",
+      "The studio's roots in the territory of Granada were not visible anywhere.",
+    ],
+    approach: [
+      "An animated modular grid in the hero: tangent curves, arcades and dimension lines draw and erase themselves, revealing reference buildings one cell at a time.",
+      "An image pipeline for the old photos: the studio's own retouches when available, otherwise Gemini retouching that must preserve the real building geometry. Plans are never sent to the AI.",
+      "An engraved map of the province that places every project from its coordinates, with an affine fit and residual correction.",
+      "Smooth scrolling, scroll-spy navigation and a hand-drawn “line boil” footer animation.",
+    ],
+    outcome: [
+      "One source of truth for projects feeding both the interface and the image pipeline.",
+      "Deployed on Vercel behind a private preview until launch.",
+    ],
+    highlights: ["Art Direction", "Image Pipeline", "Interactive Map"],
+    links: [
+      { label: "GitHub Repo", href: "https://github.com/carlosmatac/arquitecture-web" },
+    ],
+    gallery: [],
+  },
+
   {
     slug: "retail-analytics-platform",
     title: "Retail Analytics Data Platform",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { insidePolygon, LOGO, logoLayout, parsePath, sampleLogo } from "../intro-logo-art";
+import { logoWave } from "../intro-logo";
 import { journeyAt } from "../journey";
 import { INTRO_END } from "../journey-timeline";
 
@@ -65,5 +66,32 @@ describe("Intro choreography", () => {
     const frame = at(0.1, true);
     expect([frame.burst, frame.flash, frame.speed, frame.stars]).toEqual([0, 0, 0, 0]);
     expect(frame.logo).toBe(frame.identity);
+  });
+});
+
+
+describe("Idle swell", () => {
+  const run = (from: number, idle: boolean, seconds: number, reduced = false, hz = 60) => {
+    let wave = from;
+    for (let i = 0; i < seconds * hz; i++) wave = logoWave(wave, idle, reduced, 1 / hz);
+    return wave;
+  };
+
+  it("rises gently while there is no active cursor and never overshoots", () => {
+    expect(run(0, true, 0.3)).toBeGreaterThan(0.15);
+    expect(run(0, true, 0.3)).toBeLessThan(0.5);
+    expect(run(0, true, 6)).toBeGreaterThan(0.99);
+    expect(run(0, true, 60)).toBeLessThanOrEqual(1);
+  });
+
+  it("gives way quickly when the mouse moves again", () => {
+    expect(run(1, false, 0.5)).toBeLessThan(0.3);
+    expect(run(1, false, 3)).toBeLessThan(0.001);
+  });
+
+  it("stays still with reduced motion and does not depend on the frame rate", () => {
+    expect(run(0, true, 10, true)).toBe(0);
+    expect(run(1, true, 2, true)).toBeLessThan(0.01);
+    expect(run(0, true, 1, false, 30)).toBeCloseTo(run(0, true, 1, false, 120), 6);
   });
 });

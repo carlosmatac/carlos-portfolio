@@ -3,16 +3,22 @@ import { logoLayout, sampleLogo } from "./intro-logo-art";
 
 /**
  * The mark as a cloud of fine symbols with real depth. It tilts towards the cursor, parts around it and is
- * crossed by a slow band of light; when the journey starts every point bursts outwards and past the camera.
+ * crossed by a slow band of light; without a cursor (touch screens, or a mouse at rest) a swell rolls across it.
+ * When the journey starts every point bursts outwards and past the camera.
  */
 const VERTEX = /* glsl */ `
   attribute vec3 aDir; attribute float aPhase; attribute float aShape; attribute float aSize;
   uniform float time; uniform float burst; uniform float pointer; uniform vec2 mouse; uniform float aspect;
-  uniform float scale; uniform float pixelRatio; uniform float unit; uniform float sweep;
+  uniform float scale; uniform float pixelRatio; uniform float unit; uniform float sweep; uniform float wave;
   varying vec3 vColor; varying float vShape;
   void main() {
     vec3 p = position;
     p.z += sin(time * 0.9 + aPhase * 12.0) * 0.006;
+    // The swell travels diagonally; its crest lifts the points towards the camera and catches the light.
+    float swell = wave * (1.0 - burst), phase = (position.x * 0.8 - position.y * 0.45) * 7.0 - time * 2.4;
+    float crest = sin(phase);
+    p.z += crest * 0.08 * swell;
+    p.y += cos(phase) * 0.02 * swell;
     float b = pow(burst, 2.2);
     p += aDir * b * (0.6 + aPhase * 2.4);
     p.z += b * (1.0 + aPhase * 3.5);
@@ -24,7 +30,7 @@ const VERTEX = /* glsl */ `
     gl_Position.xy += (dist > 1e-4 ? fromMouse / dist : vec2(0.0)) / vec2(aspect, 1.0) * push * gl_Position.w;
     float near = pointer * (1.0 - smoothstep(0.0, 0.28, dist));
     float band = exp(-pow((position.x * 0.6 + position.y - sweep) * 6.0, 2.0));
-    vColor = color * (1.0 + 0.7 * near + 1.3 * band + 2.8 * b);
+    vColor = color * (1.0 + 0.7 * near + 1.3 * band + 2.8 * b + 0.8 * swell * smoothstep(0.3, 1.0, crest));
     vShape = aShape;
     gl_PointSize = clamp(aSize * unit * scale / -mv.z, 1.0 * pixelRatio, 16.0 * pixelRatio);
   }`;
@@ -40,6 +46,12 @@ const FRAGMENT = /* glsl */ `
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }`;
+
+/** Eases the swell in once the cursor rests (or never existed) and out as soon as it moves again. */
+export function logoWave(current: number, idle: boolean, reduced: boolean, dt: number) {
+  const target = idle && !reduced ? 1 : 0;
+  return current + (target - current) * (1 - Math.exp(-dt / (target ? 1.1 : 0.35)));
+}
 
 export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
   let seed = 4217;
@@ -68,7 +80,7 @@ export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
   geometry.setAttribute("aSize", new THREE.Float32BufferAttribute(sizes, 1));
   const uniforms = {
     time: { value: 0 }, burst: { value: 0 }, pointer: { value: 0 }, mouse: { value: new THREE.Vector2(9, 9) }, aspect: { value: 1 },
-    scale: { value: 1 }, pixelRatio: { value: 1 }, unit: { value: 1 }, sweep: { value: -3 }, opacity: { value: 1 },
+    scale: { value: 1 }, pixelRatio: { value: 1 }, unit: { value: 1 }, sweep: { value: -3 }, opacity: { value: 1 }, wave: { value: 0 },
   };
   const material = new THREE.ShaderMaterial({
     uniforms, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: VERTEX, fragmentShader: FRAGMENT,
@@ -104,7 +116,7 @@ export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
       uniforms.pixelRatio.value = ratio;
       uniforms.aspect.value = width / Math.max(1, height);
     },
-    update(frame: { seconds: number; dt: number; burst: number; opacity: number; flash: number; warp: number; hovering: boolean; pointer: { x: number; y: number }; reduced: boolean }, camera: THREE.PerspectiveCamera) {
+    update(frame: { seconds: number; dt: number; burst: number; opacity: number; flash: number; warp: number; hovering: boolean; idle: boolean; pointer: { x: number; y: number }; reduced: boolean }, camera: THREE.PerspectiveCamera) {
       const ease = 1 - Math.exp(-frame.dt / 0.7), idle = frame.reduced ? 0 : 1;
       follow.x += ((frame.hovering ? frame.pointer.x : 0) - follow.x) * ease;
       follow.y += ((frame.hovering ? frame.pointer.y : 0) - follow.y) * ease;
@@ -116,6 +128,7 @@ export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
       uniforms.pointer.value += (Number(frame.hovering && !frame.reduced) * (1 - frame.burst) - uniforms.pointer.value) * (1 - Math.exp(-frame.dt / 0.3));
       uniforms.mouse.value.set(frame.hovering ? frame.pointer.x : 9, frame.hovering ? frame.pointer.y : 9);
       uniforms.sweep.value = frame.reduced ? -3 : (frame.seconds % 7) / 7 * 5 - 2.5;
+      uniforms.wave.value = logoWave(uniforms.wave.value, frame.idle, frame.reduced, frame.dt);
       const glow = frame.flash * 0.55 + frame.warp * 0.16;
       flash.visible = glow > 0.001;
       if (flash.visible) {

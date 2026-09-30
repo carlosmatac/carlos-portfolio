@@ -16,11 +16,11 @@ vi.mock("../create-descent", () => ({
 
 const pageHeight = JOURNEY.totalH * 1000;
 let sectionHeight = pageHeight + 1000;
-let now = 0, scrollY = stopProgress(0) * pageHeight, reduced = false;
+let now = 0, scrollY = stopProgress(0) * pageHeight, reduced = false, coarse = false;
 let callback: FrameRequestCallback;
 let motionChange: () => void;
 beforeEach(() => {
-  now = 0; scrollY = stopProgress(0) * pageHeight; reduced = false;
+  now = 0; scrollY = stopProgress(0) * pageHeight; reduced = false; coarse = false;
   sectionHeight = pageHeight + 1000;
   sceneMock.fail = false;
   sceneMock.render.mockClear(); sceneMock.resize.mockClear(); sceneMock.dispose.mockClear();
@@ -33,9 +33,9 @@ beforeEach(() => {
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => { callback = cb; return 1; });
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
-  vi.stubGlobal("matchMedia", () => ({
-    get matches() { return reduced; },
-    addEventListener: (_event: string, listener: () => void) => { motionChange = listener; },
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    get matches() { return query.includes("reduced-motion") ? reduced : query.includes("coarse") ? coarse : false; },
+    addEventListener: (_event: string, listener: () => void) => { if (query.includes("reduced-motion")) motionChange = listener; },
     removeEventListener: vi.fn(),
   }));
   vi.spyOn(window, "scrollTo").mockImplementation((options: ScrollToOptions | number) => {
@@ -133,16 +133,45 @@ describe("Guided scroll integration", () => {
     expect(stage.getAttribute("data-travelling")).toBe("false");
   });
 
-  it("returns to the start from the logo once the journey has begun", async () => {
-    const { container, stage } = await mount();
-    const home = container.querySelector<HTMLAnchorElement>(".home-logo")!;
-    expect(home.inert).toBe(false);
-    fireEvent.click(home);
+  it("returns to the start from the header's Home link once the journey has begun", async () => {
+    const { stage } = await mount();
+    const home = document.createElement("a");
+    home.href = "/"; home.dataset.journeyTarget = "top";
+    document.body.append(home);
+    const click = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
+    home.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
     advance(1000);
     expect(scrollY).toBe(0);
     expect(stage.getAttribute("data-phase")).toBe("intro");
     expect(location.hash).toBe("");
-    expect(home.inert).toBe(true);
+    home.remove();
+  });
+
+  it("travels to a station chosen in the header and announces each station it settles on", async () => {
+    const { stage } = await mount();
+    const stops: string[] = [];
+    const listen = (event: Event) => stops.push((event as CustomEvent<string>).detail);
+    window.addEventListener("journey:stop", listen);
+    const link = document.createElement("a");
+    link.href = "/#brno"; link.dataset.journeyTarget = "brno";
+    document.body.append(link);
+    fireEvent.click(link); advance(1000);
+    expect(stage.getAttribute("data-stop")).toBe("brno");
+    expect(location.hash).toBe("#brno");
+    expect(stops.at(-1)).toBe("brno");
+    expect(document.documentElement.dataset.journeyStop).toBe("brno");
+    const elsewhere = document.createElement("a");
+    elsewhere.href = "/work#brno";
+    document.body.append(elsewhere);
+    let handled = true;
+    const stopNavigation = (event: Event) => { handled = event.defaultPrevented; event.preventDefault(); };
+    window.addEventListener("click", stopNavigation);
+    fireEvent.click(elsewhere);
+    expect(handled).toBe(false);
+    window.removeEventListener("click", stopNavigation);
+    window.removeEventListener("journey:stop", listen);
+    link.remove(); elsewhere.remove();
   });
 
   it("leaves reduced-motion scrolling native and does not trap keyboard focus", async () => {
@@ -356,4 +385,57 @@ it("flies through clouds for adjacent Earth/city links instead of using the dire
   expect((stage as HTMLElement).style.getPropertyValue("--seek-opacity")).toBe("0.0000");
   advance(5000);
   expect(stage.getAttribute("data-stop")).toBe("earth");
+});
+
+describe("Stepped travel on touch devices", () => {
+  it("never follows or writes the page scroll, so it cannot rest inside a transition", async () => {
+    coarse = true;
+    const { stage } = await mount();
+    const writes = vi.mocked(window.scrollTo).mock.calls.length;
+    // A native scroll to the middle of the St. Louis → Granada passage changes nothing.
+    scrollY = pageHeight * (JOURNEY.anchors["st-louis"] + 1) / JOURNEY.totalH;
+    fireEvent.scroll(window); fireEvent.touchStart(window); fireEvent.touchEnd(window);
+    advance(8000);
+    expect(stage.getAttribute("data-stop")).toBe("st-louis");
+    expect(stage.getAttribute("data-travelling")).toBe("false");
+    expect(vi.mocked(window.scrollTo).mock.calls.length).toBe(writes);
+  });
+
+  it("goes through the full transition to the next station with a button, one station per press", async () => {
+    coarse = true;
+    const { stage, container } = await mount();
+    const next = container.querySelector<HTMLButtonElement>(".station-next")!;
+    expect(next.textContent).toContain("Granada");
+    fireEvent.click(next);
+    const passage = new Set<string>();
+    const sample = (ms: number) => { for (let t = 0; t < ms; t += 50) { advance(50); passage.add(stage.getAttribute("data-phase")!); } };
+    sample(1000);
+    expect(stage.getAttribute("data-travelling")).toBe("true");
+    expect(next.getAttribute("aria-disabled")).toBe("true");
+    // Presses during the flight are ignored rather than queued.
+    fireEvent.click(next); fireEvent.click(next);
+    sample(4500);
+    expect(passage.has("departure")).toBe(true);
+    expect(passage.has("arrival")).toBe(true);
+    expect(stage.getAttribute("data-stop")).toBe("granada");
+    expect(stage.getAttribute("data-travelling")).toBe("false");
+    expect(next.getAttribute("aria-disabled")).toBe("false");
+    expect(next.textContent).toContain("Brno");
+    fireEvent.click(container.querySelector(".station-back")!); advance(6000);
+    expect(stage.getAttribute("data-stop")).toBe("st-louis");
+  });
+
+  it("starts from the intro with a tap and offers the way back to Earth at the last station", async () => {
+    coarse = true;
+    scrollY = 0;
+    const { stage, container } = await mount();
+    expect(stage.getAttribute("data-phase")).toBe("intro");
+    fireEvent.click(container.querySelector(".scroll-invitation")!); advance(6000);
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+    fireEvent.click(container.querySelector('.journey-nav a[href="#madrid"]')!); advance(1000);
+    const next = container.querySelector<HTMLButtonElement>(".station-next")!;
+    expect(next.textContent).toContain("Back to Earth");
+    fireEvent.click(next); advance(1000);
+    expect(stage.getAttribute("data-stop")).toBe("earth");
+  });
 });
