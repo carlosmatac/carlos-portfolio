@@ -9,5 +9,6 @@ export const site = {
   links: {
     github: "https://github.com/carlosmatac",
     linkedin: "https://www.linkedin.com/in/carlos-mata-carrillo/",
+    x: "https://x.com/carlosmatacar",
   },
 };

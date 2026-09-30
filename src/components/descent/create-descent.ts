@@ -14,6 +14,8 @@ import { createIntroLogo } from "./intro-logo";
 import { trackPointer } from "./cities/pointer";
 
 const BASE_FOV = 42, START_Z = 10;
+/** A mouse resting this long hands the logo over to the swell. */
+const LOGO_IDLE_SECONDS = 2.5;
 // The fall runs along (0, -85, -240) and ends TUNNEL_GAP in front of the Earth (see create-earth).
 const TUNNEL_LENGTH = Math.hypot(85, 240), TUNNEL_GAP = 18;
 
@@ -133,7 +135,9 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       camera.lookAt(cameraTarget);
       camera.updateMatrixWorld();
       const hovering = cursor.hovering(seconds);
-      logo.update({ seconds, dt, burst: frame.burst, opacity: frame.logo, flash: frame.flash, warp, hovering, pointer: cursor.state, reduced }, camera);
+      // Touch screens never report a cursor, so the swell runs there all the time.
+      const idle = !cursor.hovering(seconds, LOGO_IDLE_SECONDS);
+      logo.update({ seconds, dt, burst: frame.burst, opacity: frame.logo, flash: frame.flash, warp, hovering, idle, pointer: cursor.state, reduced }, camera);
       pointsMaterial.opacity = 0.14 * frame.identity * (1 - frame.stars) + frame.stars * (0.35 + frame.speed * 0.65);
       trailUniforms.uLength.value = frame.speed * 26;
       trailUniforms.uOpacity.value = frame.stars * frame.speed * 0.9;
