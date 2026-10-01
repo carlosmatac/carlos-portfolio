@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { insidePolygon, LOGO, logoLayout, parsePath, sampleLogo } from "../intro-logo-art";
 import { logoWave } from "../intro-logo";
 import { journeyAt } from "../journey";
-import { INTRO_END } from "../journey-timeline";
+import { JOURNEY } from "../journey-timeline";
+import { flightEase } from "../motion";
 
 describe("Intro logo", () => {
   it("parses both straight-line paths of the mark into closed polygons inside the view box", () => {
@@ -39,36 +40,38 @@ describe("Intro logo", () => {
 });
 
 describe("Intro choreography", () => {
-  const at = (intro: number, reduced = false) => journeyAt(intro * INTRO_END, reduced);
+  const at = (clock: number, reduced = false) => {
+    const earth = JOURNEY.anchors.earth / JOURNEY.totalH;
+    return journeyAt(flightEase(clock) * earth, reduced);
+  };
+  const first = (key: "identity" | "logo" | "gather" | "worms" | "field" | "visible", test: (v: number) => boolean) => {
+    for (let i = 0; i <= 1000; i++) {
+      const frame = at(i / 1000), value = key === "visible" ? frame.earth.visible : frame[key];
+      if (test(value)) return i / 1000;
+    }
+    return Infinity;
+  };
 
-  it("fades the identity, bursts the logo, flashes, then falls", () => {
-    expect(at(0)).toMatchObject({ identity: 1, prompt: 1, burst: 0, flash: 0, logo: 1, speed: 0 });
-    const peak = [0.2, 0.24, 0.26, 0.28, 0.32].reduce((best, t) => at(t).flash > at(best).flash ? t : best, 0.2);
-    expect(peak).toBeLessThan(0.32);
-    expect(at(0.14).identity).toBe(0);
-    expect(at(0.36).burst).toBe(1);
-    expect(at(0.42).logo).toBe(0);
-    expect(at(0.3).distance).toBe(0);
+  it("hands over from the logo to the streamers, to the cocoon, to the planet, in that order", () => {
+    expect(first("identity", v => v === 0)).toBeLessThan(first("logo", v => v === 0));
+    expect(first("gather", v => v > 0)).toBeLessThan(first("logo", v => v < 0.5));
+    expect(first("visible", v => v > 0)).toBeGreaterThan(first("gather", v => v > 0.3));
+    expect(first("gather", v => v === 1)).toBeLessThan(first("worms", v => v < 0.5));
+    expect(first("visible", v => v > 0.9)).toBeLessThan(first("worms", v => v === 0));
+    expect(first("field", v => v < 0.5)).toBeGreaterThan(first("visible", v => v > 0.3));
   });
 
-  it("brakes progressively: speed falls monotonically after the warp while the Earth grows to full size", () => {
-    const samples = [0.34, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1].map(t => at(t));
-    samples.slice(1).forEach((s, i) => {
-      expect(s.speed).toBeLessThanOrEqual(samples[i].speed);
-      expect(s.earth.visible).toBeGreaterThanOrEqual(samples[i].earth.visible);
-      expect(s.distance).toBeGreaterThanOrEqual(samples[i].distance);
-    });
-    expect(at(1).speed).toBe(0); expect(at(1).earth.visible).toBe(1);
-    expect(at(0.6).earth.visible).toBeGreaterThan(0);
+  it("responds within the first 100 ms of the gesture", () => {
+    const flight = 5600;
+    expect(at(100 / flight).prompt).toBeLessThan(0.9);
   });
 
-  it("keeps the logo still and only fades it with reduced motion", () => {
+  it("keeps the logo still and the streamers away with reduced motion", () => {
     const frame = at(0.1, true);
-    expect([frame.burst, frame.flash, frame.speed, frame.stars]).toEqual([0, 0, 0, 0]);
+    expect([frame.burst, frame.gather, frame.worms]).toEqual([0, 0, 0]);
     expect(frame.logo).toBe(frame.identity);
   });
 });
-
 
 describe("Idle swell", () => {
   const run = (from: number, idle: boolean, seconds: number, reduced = false, hz = 60) => {

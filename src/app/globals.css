@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  /* Fine film grain for coloured fields (intro and work board): subtle, never coarse dots. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.1 -.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
   --bg: 3 4 7;
   --fg: 238 239 245;
   --accent: 146 166 221;
@@ -40,6 +42,27 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 }
 .descent-canvas { position: absolute; inset: 0; }
 .descent-canvas canvas { display: block; width: 100%; height: 100%; }
+.descent-canvas .intro-worms { position: absolute; inset: 0; pointer-events: none; }
+/* The intro's colour: slow-drifting blurred blobs under fine grain, receding to space as the Earth appears. */
+.intro-field { position: absolute; inset: 0; overflow: hidden; opacity: var(--field-opacity, 1); pointer-events: none; background: #06070d; }
+.intro-field::before, .intro-field::after { content: ""; position: absolute; }
+.intro-field::before {
+  inset: -18%;
+  background:
+    radial-gradient(circle 30vmax at 50% 40%, #06070dd9, transparent),
+    radial-gradient(circle 34vmax at 16% 20%, #5646d6a6, transparent),
+    radial-gradient(circle 32vmax at 86% 16%, #c03d86a1, transparent),
+    radial-gradient(circle 38vmax at 82% 84%, #14918a9c, transparent),
+    radial-gradient(circle 34vmax at 16% 86%, #d2823a94, transparent),
+    radial-gradient(circle 26vmax at 56% 70%, #3a6fe080, transparent);
+  animation: field-drift 28s ease-in-out infinite alternate;
+}
+.intro-field::after { inset: 0; background: var(--grain); opacity: .4; mix-blend-mode: overlay; }
+@keyframes field-drift {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate3d(3%, -2%, 0) rotate(5deg) scale(1.06); }
+  100% { transform: translate3d(-3%, 2.5%, 0) rotate(-4deg) scale(1.03); }
+}
 .intro-identity {
   position: absolute;
   inset: 0;

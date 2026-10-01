@@ -57,15 +57,17 @@ describe("Earth framing", () => {
   });
 });
 
-it("starts promptly, stays monotone and preserves the entire quintic braking half", () => {
+it("starts promptly, then brakes in one continuous motion without a second acceleration", () => {
   expect(flightEase(100 / 4800)).toBeGreaterThan(0.01);
   expect(flightEase(0.000001) / 0.000001).toBeLessThan(0.0001);
-  let previous = 0;
-  for (let i = 0; i <= 1000; i++) {
-    const t = i / 1000, value = flightEase(t);
-    expect(value).toBeGreaterThanOrEqual(previous);
-    expect(value).toBeLessThanOrEqual(1);
-    if (t >= 0.5) expect(value).toBe(smootherstep(t));
-    previous = value;
-  }
+  const n = 2000, velocity = Array.from({ length: n }, (_, i) => (flightEase((i + 1) / n) - flightEase(i / n)) * n);
+  const peak = velocity.indexOf(Math.max(...velocity));
+  expect(peak / n).toBeLessThan(0.15);
+  velocity.forEach((v, i) => {
+    expect(v).toBeGreaterThanOrEqual(0);
+    if (i && i <= peak) expect(v).toBeGreaterThanOrEqual(velocity[i - 1] - 1e-9);
+    if (i > peak) expect(v).toBeLessThanOrEqual(velocity[i - 1] + 1e-9);
+  });
+  expect(velocity.at(-1)).toBeLessThan(1e-4);
+  expect(flightEase(1)).toBe(1);
 });

@@ -1,43 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { journeyAt } from "../journey";
-import { earthAt, INTRO_END, stopProgress } from "../earth-journey";
+import { introClock, journeyAt } from "../journey";
+import { flightEase } from "../motion";
+import { createFlight, flightPosition } from "../scroll-journey";
+import { earthAt, stopProgress } from "../earth-journey";
 import { JOURNEY } from "../journey-timeline";
 import { places } from "@/content/places";
 import { locationVector } from "../create-earth";
 
 describe("Scroll journey", () => {
-  it("enters the screen before falling and reaches Earth after braking", () => {
-    expect(journeyAt(0).identity).toBe(1);
-    expect(journeyAt(0).earth.visible).toBe(0);
-    expect(journeyAt(0.30 * INTRO_END).distance).toBe(0);
-    expect(journeyAt(0.32 * INTRO_END).zoom).toBe(1);
-    expect(journeyAt(INTRO_END).speed).toBe(0);
-    expect(journeyAt(INTRO_END).earth.visible).toBe(1);
-  });
-
-  it("covers progressively less distance for equal scroll increments and stops", () => {
-    const positions = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1].map(p => journeyAt(p * INTRO_END).distance);
-    const steps = positions.slice(1).map((position, index) => position - positions[index]);
-    steps.forEach((step, index) => {
-      expect(step).toBeGreaterThanOrEqual(0);
-      if (index) expect(step).toBeLessThan(steps[index - 1]);
-    });
-    expect(steps.at(-1)).toBe(0);
-  });
-
-  it("approaches the Earth in one motion that brakes only once, at the Earth stop", () => {
+  it("starts on the logo and settles on the Earth with the intro layers gone", () => {
     const earthStop = JOURNEY.anchors.earth / JOURNEY.totalH;
-    const samples = Array.from({ length: 201 }, (_, i) => journeyAt(earthStop * i / 200).approach);
-    const steps = samples.slice(1).map((value, i) => value - samples[i]);
-    const moving = steps.findIndex(step => step > 0);
-    const peak = steps.indexOf(Math.max(...steps));
-    steps.slice(moving).forEach((step, i) => {
-      expect(step).toBeGreaterThan(0);
-      if (moving + i > peak) expect(step).toBeLessThanOrEqual(steps[moving + i - 1] + 1e-12);
-    });
-    expect(samples.at(-1)).toBeCloseTo(1, 10);
-    expect(journeyAt(earthStop + 0.01).approach).toBe(1);
-    expect(journeyAt(earthStop, true).approach).toBe(0);
+    expect(journeyAt(0)).toMatchObject({ identity: 1, logo: 1, gather: 0, worms: 1, field: 1 });
+    expect(journeyAt(0).earth.visible).toBe(0);
+    expect(journeyAt(earthStop)).toMatchObject({ identity: 0, logo: 0, gather: 1, worms: 0, field: 0 });
+    expect(journeyAt(earthStop).earth.visible).toBe(1);
+  });
+
+  it("paces the choreography on the flight's clock, the inverse of its easing", () => {
+    for (const x of [0, 0.01, 0.1, 0.35, 0.6, 0.9, 1]) expect(introClock(flightEase(x))).toBeCloseTo(x, 5);
+  });
+
+  it("changes every intro layer smoothly during the real first flight, without a jump", () => {
+    const earthStop = JOURNEY.anchors.earth / JOURNEY.totalH;
+    const flight = createFlight(0, earthStop, 0);
+    let previous = journeyAt(0);
+    for (let ms = 1000 / 60; ms <= flight.duration; ms += 1000 / 60) {
+      const frame = journeyAt(flightPosition(flight, ms));
+      for (const key of ["identity", "logo", "burst", "gather", "worms", "field"] as const) {
+        expect(Math.abs(frame[key] - previous[key]), `${key} at ${ms.toFixed(0)} ms`).toBeLessThan(0.05);
+      }
+      expect(Math.abs(frame.earth.visible - previous.earth.visible)).toBeLessThan(0.05);
+      previous = frame;
+    }
+    expect(previous.earth.visible).toBe(1);
   });
 
   it("lands at every city in order and leaves its chapter readable", () => {
@@ -70,7 +65,7 @@ describe("Scroll journey", () => {
   it("keeps every chapter reachable without flight for reduced motion", () => {
     places.forEach((_,index)=>{
       const frame=journeyAt(stopProgress(index)+0.01,true);
-      expect([frame.zoom,frame.distance,frame.speed,frame.stars,frame.earth.altitude]).toEqual([0,0,0,0,0]);
+      expect([frame.burst,frame.gather,frame.worms,frame.earth.altitude]).toEqual([0,0,0,0]);
       expect(frame.earth.active).toBe(index);
       expect(frame.earth.text).toBe(1);
     });

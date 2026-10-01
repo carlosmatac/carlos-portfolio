@@ -10,10 +10,13 @@ export function smootherstep(t: number) {
   return x * x * x * (x * (x * 6 - 15) + 10);
 }
 
+/**
+ * The intro flight: a single velocity hump. It starts within a few frames (a gaussian onset, so no jolt at t = 0),
+ * peaks early and then brakes continuously to rest, with no second acceleration.
+ */
 export function flightEase(t: number) {
   const x = clamp01(t);
-  const onset = 0.75 * x * (1 - Math.exp(-x / 0.018));
-  return smootherstep(x) + onset * (1 - smootherRange(0.08, 0.5, x));
+  return (1 - (1 - x) ** 3) * (1 - Math.exp(-((x / 0.04) ** 2)));
 }
 
 export function orbitalAltitude(t: number) {

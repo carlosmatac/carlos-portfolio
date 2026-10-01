@@ -258,6 +258,7 @@ export default function DescentExperience() {
       stage.style.setProperty("--identity-opacity", frame.identity.toFixed(4));
       stage.style.setProperty("--prompt-opacity", frame.prompt.toFixed(4));
       stage.style.setProperty("--logo-opacity", frame.logo.toFixed(4));
+      stage.style.setProperty("--field-opacity", frame.field.toFixed(4));
       stage.style.setProperty("--earth-opacity", frame.earth.visible.toFixed(4));
       stage.style.setProperty("--city-opacity", String(Number(frame.timeline.passage?.scene === "city")));
       stage.style.setProperty("--passage-opacity", (frame.timeline.passage?.cover ?? 0).toFixed(4));
@@ -285,7 +286,8 @@ export default function DescentExperience() {
       stage.dataset.travelling = String(travelling);
       nextButton.setAttribute("aria-disabled", String(travelling));
       backButton.setAttribute("aria-disabled", String(travelling));
-      if (travelling || progress !== target || now - lastRender >= 1000 / 30) {
+      // Full frame rate while anything moves, streamers included; 30 fps while resting on a scene.
+      if (travelling || progress !== target || frame.worms > 0 || now - lastRender >= 1000 / 30) {
         scene?.render(frame, now / 1000, reduced.matches);
         lastRender = now;
       }
@@ -345,6 +347,7 @@ export default function DescentExperience() {
       "--journey-reduced-height": `${(JOURNEY.totalH / 2 + 1) * 100}svh`,
     } as CSSProperties}>
       <div className="descent-viewport" ref={viewport} data-renderer="fallback" data-phase="intro">
+        <div className="intro-field" aria-hidden="true" />
         <div className="descent-canvas" ref={host} />
         <svg className="intro-logo" viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
         <div className="intro-identity" ref={identity}>

@@ -4,7 +4,7 @@ import { logoLayout, sampleLogo } from "./intro-logo-art";
 /**
  * The mark as a cloud of fine symbols with real depth. It tilts towards the cursor, parts around it and is
  * crossed by a slow band of light; without a cursor (touch screens, or a mouse at rest) a swell rolls across it.
- * When the journey starts every point bursts outwards and past the camera.
+ * When the journey starts every point drifts apart and past the camera, while the streamers take over.
  */
 const VERTEX = /* glsl */ `
   attribute vec3 aDir; attribute float aPhase; attribute float aShape; attribute float aSize;
@@ -91,19 +91,7 @@ export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
   group.add(points);
   scene.add(group);
 
-  // The bloom that opens the warp.
-  const flash = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
-    uniforms: { strength: { value: 0 } }, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `varying vec2 vUv; uniform float strength; void main(){
-      float r = length(vUv - 0.5) * 2.0;
-      vec3 c = vec3(0.4, 0.5, 1.0) * exp(-r * 4.2) * 0.8 + vec3(0.95, 0.97, 1.0) * exp(-r * 16.0) * 0.9;
-      gl_FragColor = vec4(c * strength, 1.0); }`,
-  }));
-  flash.name = "Warp_Flash"; flash.frustumCulled = false; flash.renderOrder = 10;
-  scene.add(flash);
-
-  const follow = { x: 0, y: 0 }, fall = new THREE.Vector3(0, -0.354, -1).normalize();
+  const follow = { x: 0, y: 0 };
   return {
     group, points,
     resize(width: number, height: number, camera: THREE.PerspectiveCamera, distance: number) {
@@ -116,7 +104,7 @@ export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
       uniforms.pixelRatio.value = ratio;
       uniforms.aspect.value = width / Math.max(1, height);
     },
-    update(frame: { seconds: number; dt: number; burst: number; opacity: number; flash: number; warp: number; hovering: boolean; idle: boolean; pointer: { x: number; y: number }; reduced: boolean }, camera: THREE.PerspectiveCamera) {
+    update(frame: { seconds: number; dt: number; burst: number; opacity: number; hovering: boolean; idle: boolean; pointer: { x: number; y: number }; reduced: boolean }) {
       const ease = 1 - Math.exp(-frame.dt / 0.7), idle = frame.reduced ? 0 : 1;
       follow.x += ((frame.hovering ? frame.pointer.x : 0) - follow.x) * ease;
       follow.y += ((frame.hovering ? frame.pointer.y : 0) - follow.y) * ease;
@@ -129,15 +117,6 @@ export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
       uniforms.mouse.value.set(frame.hovering ? frame.pointer.x : 9, frame.hovering ? frame.pointer.y : 9);
       uniforms.sweep.value = frame.reduced ? -3 : (frame.seconds % 7) / 7 * 5 - 2.5;
       uniforms.wave.value = logoWave(uniforms.wave.value, frame.idle, frame.reduced, frame.dt);
-      const glow = frame.flash * 0.55 + frame.warp * 0.16;
-      flash.visible = glow > 0.001;
-      if (flash.visible) {
-        // Sits on the tunnel's vanishing point, where the fall is heading.
-        flash.position.copy(camera.position).addScaledVector(fall, 4);
-        flash.quaternion.copy(camera.quaternion);
-        flash.scale.setScalar(9 * (0.7 + frame.flash));
-        (flash.material as THREE.ShaderMaterial).uniforms.strength.value = glow;
-      }
     },
   };
 }
