@@ -19,6 +19,19 @@ export function flightEase(t: number) {
   return (1 - (1 - x) ** 3) * (1 - Math.exp(-((x / 0.04) ** 2)));
 }
 
+/** When a flight eased by `ease` has covered `fraction` of its way, as a fraction of its duration. */
+export function easeInverse(ease: (t: number) => number, fraction: number) {
+  const target = clamp01(fraction);
+  if (target <= 0) return 0;
+  if (target >= 1) return 1;
+  let low = 0, high = 1;
+  for (let i = 0; i < 30; i++) {
+    const mid = (low + high) / 2;
+    if (ease(mid) < target) low = mid; else high = mid;
+  }
+  return (low + high) / 2;
+}
+
 export function orbitalAltitude(t: number) {
   return Math.sin(clamp01(t / 0.34) * Math.PI / 2)
     * Math.sin(clamp01((1 - t) / 0.34) * Math.PI / 2);

@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { createCloudVolume } from "../clouds/cloud-volume";
 import { createDotMatrix, DOT_MATRIX_GLSL } from "./dot-matrix";
 import {
   aimPoint, HAT_LOGO, helicopterGoal, jetPair, munichCamera, munichCell, munichView, PAD, random, stepHelicopter, WAYPOINTS,
@@ -155,7 +154,6 @@ function buildJet(own: <T extends THREE.BufferGeometry>(g: T) => T, material: TH
 
 export function createMunich(quality: CityQuality = "desktop"): CityScene {
   const mobile = quality === "mobile";
-  const atmosphere = createCloudVolume(quality);
   const materials: THREE.Material[] = [], geometries: THREE.BufferGeometry[] = [];
   const own = <T extends THREE.BufferGeometry>(g: T) => { geometries.push(g); return g; };
   const mat = <T extends THREE.Material>(m: T) => { materials.push(m); return m; };
@@ -320,8 +318,8 @@ export function createMunich(quality: CityQuality = "desktop"): CityScene {
   let flight = { position: helicopterGoal(null, 0, false), velocity: [0, 0, 0] as Vec3 };
   const follow = { x: 0, y: 0 }, projected = new THREE.Vector3(), ray = new THREE.Vector3();
   const api: CityScene = {
-    id: "munich-mission", assetStage: "render", scene, camera, atmosphere,
-    get status() { return disposed ? "disposed" : atmosphere.status === "error" ? "error" : atmosphere.status === "ready" ? "ready" : "loading"; },
+    id: "munich-mission", assetStage: "render", scene, camera,
+    get status() { return disposed ? "disposed" : "ready"; },
     update(frame) {
       current = frame;
       const seconds = frame.ambientSeconds, dt = Math.min(0.1, Math.max(0, seconds - lastSeconds));
@@ -369,7 +367,7 @@ export function createMunich(quality: CityQuality = "desktop"): CityScene {
       new Set(geometries).forEach(g => g.dispose());
       new Set(materials).forEach(m => m.dispose());
       blocks.dispose();
-      matrix.dispose(); atmosphere.dispose(); world.clear();
+      matrix.dispose(); world.clear();
     },
   };
   api.resize(1440, 900, quality);

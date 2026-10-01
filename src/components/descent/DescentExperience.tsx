@@ -86,7 +86,7 @@ export default function DescentExperience() {
       if (Math.abs(progress - destination) < 0.0001) return;
       const adjacent = Math.abs(adjacentStop(progress, Math.sign(destination - progress)) - destination) < 1e-8;
       const nextFlight = createFlight(progress, destination, performance.now());
-      if (explicit && !(adjacent && nextFlight.profile === "cloud")) seek = createSeek(progress, destination, performance.now());
+      if (explicit && !(adjacent && nextFlight.profile === "passage")) seek = createSeek(progress, destination, performance.now());
       else flight = nextFlight;
     }
     function busy() { return flight !== null || seek !== null; }
@@ -262,7 +262,6 @@ export default function DescentExperience() {
       stage.style.setProperty("--earth-opacity", frame.earth.visible.toFixed(4));
       stage.style.setProperty("--city-opacity", String(Number(frame.timeline.passage?.scene === "city")));
       stage.style.setProperty("--passage-opacity", (frame.timeline.passage?.cover ?? 0).toFixed(4));
-      stage.style.setProperty("--passage-y", `${((frame.timeline.passage?.depth ?? 0) - 0.5) * 70}%`);
       stage.style.setProperty("--earth-intro", `${frame.earth.visible * frame.earth.overview * (1 - (frame.timeline.passage?.cover ?? 0))}`);
       stage.style.setProperty("--shade-opacity", `${frame.earth.navigation * (1 - frame.earth.overview) * (1 - (frame.timeline.passage?.cover ?? 0))}`);
       stage.style.setProperty("--nav-opacity", frame.earth.navigation.toFixed(4));

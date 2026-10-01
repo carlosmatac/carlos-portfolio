@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { JourneyFrame } from "./journey";
 import { createEarth } from "./create-earth";
-import { earthCameraDistance, earthFraming, smootherRange } from "./motion";
+import { earthCameraDistance, earthFraming } from "./motion";
 import { createBrno } from "./cities/create-brno";
 import { createGranada } from "./cities/create-granada";
 import { createMadrid } from "./cities/create-madrid";
@@ -10,6 +10,7 @@ import { createStLouis } from "./cities/create-st-louis";
 import type { CitySceneId } from "./journey-config";
 import type { CityScene, CityQuality } from "./cities/types";
 import { createTransition } from "./transitions/create-transition";
+import { PASSAGE_PATTERNS, passageDive, tileSize } from "./transitions/pixel-passage";
 import { createIntroLogo } from "./intro-logo";
 import { logoLayout } from "./intro-logo-art";
 import { createIntroWorms } from "./intro-worms";
@@ -76,7 +77,7 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       logo.resize(width, height, camera, overviewDistance - EARTH_DEPTH);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 700 ? 1.5 : 2));
       renderer.setSize(width, height);
-      transition.resize(width, height, Math.min(renderer.getPixelRatio(), 1.5));
+      transition.resize(width, height, Math.min(renderer.getPixelRatio(), 1.5), tileSize(width));
       worms.resize(width, height);
       resizeCity();
     },
@@ -93,7 +94,7 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
         const near = THREE.MathUtils.lerp(framing.visitDistance, overviewDistance, frame.earth.overview);
         const approach = THREE.MathUtils.lerp(overviewDistance, near, frame.earth.landing);
         const orbit = THREE.MathUtils.lerp(approach, framing.transitDistance, frame.earth.altitude);
-        const dive = !reduced && frame.timeline.passage ? smootherRange(0, 0.4, frame.timeline.passage.depth) : 0;
+        const dive = !reduced && frame.timeline.passage ? passageDive(frame.timeline.passage.depth) : 0;
         distance = THREE.MathUtils.lerp(orbit, 3.7, dive);
       }
       camera.position.copy(earth.root.position).add(projected.set(0, 0, distance));
@@ -139,7 +140,7 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       if (host.parentElement) host.parentElement.dataset.cityAsset = city?.status ?? "inactive";
       const ready = city?.status === "ready" ? city : null;
       transition.render(scene, camera, ready?.scene ?? null, ready?.camera ?? null,
-        frame.timeline.passage, ready?.atmosphere ?? null, seconds, reduced);
+        frame.timeline.passage, ready ? PASSAGE_PATTERNS[ready.id].id : 0);
     },
     dispose() {
       canvas.removeEventListener("webglcontextlost", contextLost);

@@ -39,13 +39,16 @@ describe("Compiled journey", () => {
 
 describe("Stateless sampling", () => {
   it("has continuous camera, blend and text at all boundaries", () => {
-    for (const phase of JOURNEY.phases.slice(1)) {
-      const before = sampleJourney(phase.startH - 1e-8), after = sampleJourney(phase.startH + 1e-8);
+    JOURNEY.phases.slice(1).forEach((phase, i) => {
+      // Passages run on the flight clock, which is steep next to a stop (the flight is almost at rest there).
+      const passage = [phase.kind, JOURNEY.phases[i].kind].some(kind => kind === "arrival" || kind === "departure");
+      const offset = passage ? 1e-12 : 1e-8, digits = passage ? 3 : 5;
+      const before = sampleJourney(phase.startH - offset), after = sampleJourney(phase.startH + offset);
       for (const key of ["altitude", "landing", "visible", "text", "navigation"] as const) {
-        expect(before.earth[key]).toBeCloseTo(after.earth[key], 5);
+        expect(before.earth[key]).toBeCloseTo(after.earth[key], digits);
       }
-      expect(before.blend).toBeCloseTo(after.blend, 5);
-    }
+      expect(before.blend).toBeCloseTo(after.blend, digits);
+    });
   });
 
   it("is identical on reverse playback and arbitrary seeks without inherited state", () => {
@@ -57,7 +60,9 @@ describe("Stateless sampling", () => {
     expect(a.blend).toBeGreaterThan(0);
     expect(a.blend).toBeLessThan(1);
     expect(a.city).toMatchObject({ visitT: 0, departureT: 0 });
-    expect(a.city?.arrivalT).toBeCloseTo(0.5);
+    // Half the distance is reached in about a third of the flight time.
+    expect(a.city?.arrivalT).toBeGreaterThan(0.25);
+    expect(a.city?.arrivalT).toBeLessThan(0.45);
   });
 
   it("clamps endpoints and leaves Madrid stable", () => {

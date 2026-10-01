@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { createCloudVolume } from "../clouds/cloud-volume";
 import { createPointField, disposeScene, type CloudItem } from "./point-cloud";
 import { trackPointer } from "./pointer";
 import { ARCH, FLAG, sampleArch, sampleFlag, stLouisAssembly, stLouisCamera, stLouisView, type FlagPart, type StLouisView } from "./st-louis-art";
@@ -20,7 +19,6 @@ const FLAG_COLOURS: Record<FlagPart, Vec3> = { red: [1.25, 0.14, 0.18], white: [
 
 export function createStLouis(quality: CityQuality = "desktop"): CityScene {
   const mobile = quality === "mobile";
-  const atmosphere = createCloudVolume(quality);
   const rng = random(1818);
   const scene = new THREE.Scene();
   scene.name = "StLouis_Data_Riverfront";
@@ -149,8 +147,8 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
   const follow = { x: 0, y: 0 }, flagCentre = new THREE.Vector3();
   uniforms.flag.value.set(FLAG.x, FLAG.y, FLAG.length, 1);
   const api: CityScene = {
-    id: "st-louis-sky", assetStage: "render", scene, camera, atmosphere,
-    get status() { return disposed ? "disposed" : atmosphere.status === "error" ? "error" : atmosphere.status === "ready" ? "ready" : "loading"; },
+    id: "st-louis-sky", assetStage: "render", scene, camera,
+    get status() { return disposed ? "disposed" : "ready"; },
     update(frame) {
       current = frame;
       const seconds = frame.ambientSeconds, dt = Math.min(0.1, Math.max(0, seconds - lastSeconds));
@@ -182,7 +180,7 @@ export function createStLouis(quality: CityQuality = "desktop"): CityScene {
       if (disposed) return;
       disposed = true;
       cursor.dispose(); field.dispose();
-      disposeScene(scene); atmosphere.dispose();
+      disposeScene(scene);
     },
   };
   api.resize(1440, 900, quality);

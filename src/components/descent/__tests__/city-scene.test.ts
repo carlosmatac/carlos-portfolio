@@ -1,10 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
-import { gzipSync } from "node:zlib";
 import { createStLouis } from "../cities/create-st-louis";
 import { ARCH, archCentre, archSide, FLAG, sampleArch, sampleFlag, stLouisCamera, stLouisView } from "../cities/st-louis-art";
-import { createCloudVolume, CLOUD_ASSETS } from "../clouds/cloud-volume";
-import { cloudPassage, cloudPassageEye } from "../transitions/cloud-passage";
+import { pixelPassage } from "../transitions/pixel-passage";
 import { createTransition } from "../transitions/create-transition";
 import { JOURNEY, sampleJourney, stopProgress } from "../journey-timeline";
 import { createFlight, flightPosition } from "../scroll-journey";
@@ -15,10 +13,7 @@ type ImageRequest = { url: string; texture: THREE.Texture; load: () => void; fai
 let requests: ImageRequest[] = [];
 beforeEach(() => {
   requests = [];
-  vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
-    const size = url.includes("mobile") ? CLOUD_ASSETS.mobile.size : CLOUD_ASSETS.desktop.size;
-    return Promise.resolve(new Response(new Uint8Array(gzipSync(new Uint8Array(size[0] * size[1] * size[2] * 2)))));
-  }));
+  vi.stubGlobal("fetch", vi.fn());
   vi.spyOn(THREE.TextureLoader.prototype, "load").mockImplementation((url, onLoad, _progress, onError) => {
     const texture = new THREE.Texture<HTMLImageElement>();
     requests.push({ url, texture, load: () => onLoad?.(texture), fail: () => onError?.(new Error("missing artwork")) });
@@ -70,15 +65,14 @@ describe("Point-cloud St. Louis", () => {
     }
   });
 
-  it("builds the riverfront from points without loading any image", async () => {
+  it("builds the riverfront from points, ready at once without downloading anything", () => {
     const city = createStLouis("mobile");
-    expect(city.status).toBe("loading");
+    expect(city.status).toBe("ready");
     for (const name of ["Gateway_Arch", "Arch_Reflection", "US_Flag", "Flag_Pole", "Old_Courthouse", "Downtown", "Busch_Stadium", "Mississippi", "Riverfront", "Levee_Traffic"]) {
       expect(city.scene.getObjectByName(name), name).toBeDefined();
     }
-    await city.atmosphere.ready;
-    expect(city.status).toBe("ready");
     expect(requests).toHaveLength(0);
+    expect(fetch).not.toHaveBeenCalled();
     city.dispose(); expect(city.status).toBe("disposed");
   });
 
@@ -130,7 +124,7 @@ describe("Point-cloud St. Louis", () => {
     city.dispose();
   });
 
-  it("releases every geometry, material and listener exactly once", async () => {
+  it("releases every geometry, material and listener exactly once", () => {
     const city = createStLouis(), resources = new Set<{ dispose: () => void }>();
     city.scene.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
@@ -138,79 +132,83 @@ describe("Point-cloud St. Louis", () => {
         for (const material of Array.isArray(object.material) ? object.material : [object.material]) resources.add(material);
       }
     });
-    await city.atmosphere.ready;
-    const volumeDispose = vi.spyOn(city.atmosphere.texture!, "dispose");
     const removed = vi.spyOn(window, "removeEventListener");
     const spies = [...resources].map(resource => vi.spyOn(resource, "dispose"));
     city.dispose(); city.dispose();
     spies.forEach(spy => expect(spy).toHaveBeenCalledOnce());
-    expect(volumeDispose).toHaveBeenCalledOnce();
     expect(removed).toHaveBeenCalledWith("pointerdown", expect.any(Function));
     expect(city.scene.children).toHaveLength(0);
   });
 });
 
-describe("Single-renderer transition", () => {
-  it.each([true, false])("renders pure endpoints and releases targets with floating point support: %s", async floatingPoint => {
-    const renderer = { render: vi.fn(), setRenderTarget: vi.fn(), extensions: { has: () => floatingPoint } };
-    const transition = createTransition(renderer as unknown as THREE.WebGLRenderer);
+describe("Pixel mosaic compositor", () => {
+  const mockRenderer = (floatingPoint = true) => ({
+    render: vi.fn(), setRenderTarget: vi.fn(), getRenderTarget: () => null, compile: vi.fn(), initTexture: vi.fn(),
+    extensions: { has: () => floatingPoint },
+  });
+  const composite = (renderer: ReturnType<typeof mockRenderer>) => {
+    const last = renderer.render.mock.calls.at(-1)![0] as THREE.Mesh;
+    return (last.material as THREE.ShaderMaterial).uniforms;
+  };
+
+  it.each([true, false])("renders resting scenes straight to the screen (floating point targets: %s)", floatingPoint => {
+    const renderer = mockRenderer(floatingPoint), transition = createTransition(renderer as unknown as THREE.WebGLRenderer);
     const earth = new THREE.Scene(), city = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
-    const volume = createCloudVolume("desktop"); await volume.ready;
-    transition.resize(390, 844, 1);
-    transition.render(earth, camera, city, camera, cloudPassage(0), volume);
+    transition.resize(390, 844, 1, 22);
+    transition.render(earth, camera, city, camera, pixelPassage(0));
     expect(renderer.render.mock.calls).toEqual([[earth, camera]]);
-    renderer.render.mockClear();
-    transition.render(earth, camera, city, camera, cloudPassage(1), volume);
-    expect(renderer.render).toHaveBeenCalledTimes(2);
-    expect(renderer.render.mock.calls[0]).toEqual([city, camera]);
+    expect(renderer.setRenderTarget.mock.calls).toEqual([[null]]);
     renderer.render.mockClear(); renderer.setRenderTarget.mockClear();
-    transition.render(earth, camera, city, camera, cloudPassage(0.5), volume);
-    expect(renderer.render).toHaveBeenCalledTimes(2);
-    expect(renderer.render.mock.calls[0]).toEqual([city, camera]);
-    const targets = renderer.setRenderTarget.mock.calls.slice(0, 1).map(args => args[0] as THREE.WebGLRenderTarget);
+    transition.render(earth, camera, city, camera, pixelPassage(1));
+    expect(renderer.render.mock.calls).toEqual([[city, camera]]);
+    renderer.render.mockClear();
+    transition.render(earth, camera, null, null, null);
+    expect(renderer.render.mock.calls).toEqual([[earth, camera]]);
+    transition.dispose();
+  });
+
+  it("renders only the scenes some tile shows into linear targets, then composites the mosaic", () => {
+    const renderer = mockRenderer(), transition = createTransition(renderer as unknown as THREE.WebGLRenderer);
+    const earth = new THREE.Scene(), city = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
+    transition.resize(1440, 900, 1.5, 34);
+    const rendered = (depth: number, pattern = 0) => {
+      renderer.render.mockClear(); renderer.setRenderTarget.mockClear();
+      transition.render(earth, camera, city, camera, pixelPassage(depth), pattern);
+      return renderer.render.mock.calls.slice(0, -1).map(call => call[0]);
+    };
+    expect(rendered(0.15)).toEqual([earth]);
+    expect(rendered(0.48)).toEqual([earth, city]);
+    expect(composite(renderer).flip.value).toBeGreaterThan(0.3);
+    expect(composite(renderer).tile.value).toBeCloseTo(34 * 1.5, 0);
+    expect(composite(renderer).gap.value).toBeGreaterThan(0.1);
+    expect(rendered(0.9, 3)).toEqual([city]);
+    expect(composite(renderer).pattern.value).toBe(3);
+    expect(composite(renderer).tile.value).toBeLessThan(34 * 1.5 * 0.5);
+    const targets = renderer.setRenderTarget.mock.calls.map(call => call[0]).filter(Boolean) as THREE.WebGLRenderTarget[];
     targets.forEach(target => {
       expect(target.texture.colorSpace).toBe(THREE.LinearSRGBColorSpace);
-      expect(target.texture.type).toBe(floatingPoint ? THREE.HalfFloatType : THREE.UnsignedByteType);
-      expect([target.width, target.height]).toEqual([390, 844]);
+      expect(target.texture.type).toBe(THREE.HalfFloatType);
+      expect([target.width, target.height]).toEqual([2160, 1350]);
     });
     expect(renderer.setRenderTarget.mock.calls.at(-1)).toEqual([null]);
-    transition.resize(1440, 900, 1.5);
-    targets.forEach(target => expect([target.width, target.height]).toEqual([2160, 1350]));
+    // Without a city the tiles still play over the Earth, so leaving never shows an empty frame.
+    expect(rendered(0.5)).toEqual([earth, city]);
     renderer.render.mockClear();
-    transition.render(earth, camera, null, null, cloudPassage(0.7));
-    expect(renderer.render.mock.calls).toEqual([[earth, camera]]);
-    const disposals = targets.map(target => vi.spyOn(target, "dispose"));
-    transition.dispose(); volume.dispose();
-    disposals.forEach(dispose => expect(dispose).toHaveBeenCalledOnce());
+    transition.render(earth, camera, null, null, pixelPassage(0.5));
+    expect(renderer.render.mock.calls.slice(0, -1).map(call => call[0])).toEqual([earth]);
+    expect(composite(renderer).flip.value).toBe(0);
+    const disposals = targets.slice(0, 2).map(target => vi.spyOn(target, "dispose"));
+    transition.dispose();
+    disposals.forEach(dispose => expect(dispose).toHaveBeenCalled());
   });
-});
 
-
-it("warms city shaders before descent, and composites above the unchanged Earth output", async () => {
-  const renderer = { render: vi.fn(), setRenderTarget: vi.fn(), getRenderTarget: () => null,
-    compile: vi.fn(), initTexture: vi.fn(), autoClear: true, extensions: { has: () => true } };
-  const transition = createTransition(renderer as unknown as THREE.WebGLRenderer);
-  const city = createStLouis(); await city.atmosphere.ready;
-  city.update(resting);
-  transition.prepare(city.scene, city.camera);
-  expect(renderer.initTexture).not.toHaveBeenCalled();
-  expect(renderer.compile).toHaveBeenCalledTimes(2);
-  expect(renderer.setRenderTarget.mock.calls.at(-1)).toEqual([null]);
-  renderer.setRenderTarget.mockClear(); renderer.render.mockClear();
-  const earth = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
-  const clearing: boolean[] = [];
-  renderer.render.mockImplementation(() => { clearing.push(renderer.autoClear); });
-  transition.render(earth, camera, city.scene, city.camera, cloudPassage(0.2), city.atmosphere);
-  expect(clearing).toEqual([true, false]);
-  expect(renderer.autoClear).toBe(true);
-  expect(renderer.setRenderTarget.mock.calls[0]).toEqual([null]);
-  expect(renderer.render.mock.calls[0]).toEqual([earth, camera]);
-  expect(renderer.render).toHaveBeenCalledTimes(2);
-  const overlay = (renderer.render.mock.calls[1][0] as THREE.Mesh).material as THREE.ShaderMaterial;
-  expect(overlay.uniforms.eye.value.toArray()).toEqual(cloudPassageEye(0.2));
-  expect(overlay.fragmentShader).toContain("marchCloud(eye,");
-  transition.render(earth, camera, null, null, null);
-  expect(overlay.uniforms.cloudVolume.value).toBeNull();
-  expect(overlay.uniforms.cloudDetail.value).toBeNull();
-  transition.dispose(); city.dispose();
+  it("warms a city's shaders before the passage reaches it", () => {
+    const renderer = mockRenderer(), transition = createTransition(renderer as unknown as THREE.WebGLRenderer);
+    const city = createStLouis();
+    city.update(resting);
+    transition.prepare(city.scene, city.camera);
+    expect(renderer.compile).toHaveBeenCalledTimes(2);
+    expect(renderer.setRenderTarget.mock.calls.at(-1)).toEqual([null]);
+    transition.dispose(); city.dispose();
+  });
 });

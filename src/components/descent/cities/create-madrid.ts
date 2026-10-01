@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { createCloudVolume } from "../clouds/cloud-volume";
 import {
   assembly, CLUSTERS, madridCamera, madridView, nearest, pipelines, random, sampleEmbeddings, sampleTowers, TOWERS,
   type MadridView,
@@ -13,7 +12,6 @@ export type MadridScene = CityScene & { readonly neighbours: { index: number; di
 
 export function createMadrid(quality: CityQuality = "desktop"): MadridScene {
   const mobile = quality === "mobile";
-  const atmosphere = createCloudVolume(quality);
   const rng = random(28);
   const scene = new THREE.Scene();
   scene.name = "Madrid_Data_Skyline";
@@ -115,8 +113,8 @@ export function createMadrid(quality: CityQuality = "desktop"): MadridScene {
   const worldPoint = new THREE.Vector3(), lit = new Set<number>();
   let neighbours: { index: number; distance: number }[] = [];
   const api: MadridScene = {
-    id: "madrid-latent", assetStage: "render", scene, camera, atmosphere,
-    get status() { return disposed ? "disposed" : atmosphere.status === "error" ? "error" : atmosphere.status === "ready" ? "ready" : "loading"; },
+    id: "madrid-latent", assetStage: "render", scene, camera,
+    get status() { return disposed ? "disposed" : "ready"; },
     get neighbours() { return neighbours; },
     update(frame) {
       current = frame;
@@ -176,7 +174,7 @@ export function createMadrid(quality: CityQuality = "desktop"): MadridScene {
       if (disposed) return;
       disposed = true;
       cursor.dispose(); field.dispose();
-      disposeScene(scene); atmosphere.dispose();
+      disposeScene(scene);
     },
   };
   api.resize(1440, 900, quality);

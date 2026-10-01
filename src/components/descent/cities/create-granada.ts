@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { createCloudVolume } from "../clouds/cloud-volume";
 import {
   CODE_COLOURS, CODE_ROWS, codeRows, DESK, SKY, studentPose, studyCamera, studyCell, studyDaylight, studyView,
   type StudyView, type Vec3,
@@ -65,7 +64,6 @@ const SKY_FRAGMENT = /* glsl */ `
 const UP = new THREE.Vector3(0, 1, 0);
 
 export function createGranada(quality: CityQuality = "desktop"): CityScene {
-  const atmosphere = createCloudVolume(quality);
   const materials: THREE.Material[] = [], geometries: THREE.BufferGeometry[] = [];
   const own = <T extends THREE.BufferGeometry>(g: T) => { geometries.push(g); return g; };
   const mat = <T extends THREE.Material>(m: T) => { materials.push(m); return m; };
@@ -248,8 +246,8 @@ export function createGranada(quality: CityQuality = "desktop"): CityScene {
   let current: CityFrame = { arrivalT: 1, visitT: 0, departureT: 0, ambientSeconds: 0, reduced: false };
   const follow = { x: 0, y: 0 };
   const api: CityScene = {
-    id: "granada-sky", assetStage: "render", scene, camera, atmosphere,
-    get status() { return disposed ? "disposed" : atmosphere.status === "error" ? "error" : atmosphere.status === "ready" ? "ready" : "loading"; },
+    id: "granada-sky", assetStage: "render", scene, camera,
+    get status() { return disposed ? "disposed" : "ready"; },
     update(frame) {
       if (disposed) return;
       current = frame;
@@ -329,7 +327,7 @@ export function createGranada(quality: CityQuality = "desktop"): CityScene {
       code.dispose();
       new Set(geometries).forEach(g => g.dispose());
       new Set(materials).forEach(m => m.dispose());
-      matrix.dispose(); atmosphere.dispose(); world.clear();
+      matrix.dispose(); world.clear();
     },
   };
   api.resize(1440, 900, quality);

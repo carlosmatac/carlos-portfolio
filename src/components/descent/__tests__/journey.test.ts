@@ -54,11 +54,12 @@ describe("Scroll journey", () => {
       expect(transfer.text).toBe(0);
       expect(transfer.turn).toBeGreaterThan(0);
       expect(transfer.turn).toBeLessThan(1);
-      const before=earthAt(stopProgress(index+1)-0.00000001);
-      const after=earthAt(stopProgress(index+1)+0.00000001);
+      // Arrivals run on the flight clock, steep right next to the stop, so the probe sits closer to it.
+      const before=earthAt(stopProgress(index+1)-1e-13);
+      const after=earthAt(stopProgress(index+1)+1e-13);
       expect(before.active).toBe(after.active);
-      expect(Math.abs(before.altitude-after.altitude)).toBeLessThan(0.00001);
-      expect(Math.abs(before.text-after.text)).toBeLessThan(0.00001);
+      expect(Math.abs(before.altitude-after.altitude)).toBeLessThan(0.001);
+      expect(Math.abs(before.text-after.text)).toBeLessThan(0.001);
     }
   });
 

@@ -1,6 +1,6 @@
 import { clamp01 } from "./easing";
 import { JOURNEY, sampleJourney } from "./journey-timeline";
-import { flightEase, smootherRange } from "./motion";
+import { easeInverse, flightEase, smootherRange } from "./motion";
 export { clamp01, smoothstep } from "./easing";
 
 /** Intro and Earth reveal: the stretch the first gesture flies. */
@@ -11,16 +11,7 @@ const ARRIVAL_H = JOURNEY.anchors.earth;
  * Pacing the choreography on this clock gives every beat its share of time, although the flight itself starts
  * fast (for an immediate response) and brakes for a long time.
  */
-export function introClock(fraction: number) {
-  const target = clamp01(fraction);
-  if (target >= 1) return 1;
-  let low = 0, high = 1;
-  for (let i = 0; i < 30; i++) {
-    const mid = (low + high) / 2;
-    if (flightEase(mid) < target) low = mid; else high = mid;
-  }
-  return (low + high) / 2;
-}
+export const introClock = (fraction: number) => easeInverse(flightEase, fraction);
 
 /**
  * The entrance: the camera never moves. The logo dissolves while the streamers swim onto great circles around a

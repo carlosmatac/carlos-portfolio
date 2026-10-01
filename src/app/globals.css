@@ -155,7 +155,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 .chapter-link { display: inline-flex; align-items: center; gap: 25px; padding: 10px 0; font-size: 13px; border-bottom: 1px solid #414957; margin-top: 10px; }
 .chapter-link:hover { border-color: #dbe5f5; }
 .journey-nav { position: absolute; z-index: 6; bottom: 9%; left: 50%; transform: translateX(-50%); display: flex; gap: 34px; opacity: var(--nav-opacity, 0); }
-.descent-viewport::after { content: ""; position: absolute; inset: 0; z-index: 5; background: linear-gradient(0deg, #030407 0 16%, transparent 34%); opacity: var(--passage-opacity, 0); pointer-events: none; }
 .journey-nav a { display: flex; align-items: center; gap: 9px; white-space: nowrap; font-size: 12px; color: #9aa6b8; min-height: 44px; transition: color .3s; }
 .journey-dot { display: block; width: 4px; height: 4px; border-radius: 50%; background: #4c586b; transition: background .3s, box-shadow .3s; }
 .journey-nav a[aria-current="step"] { color: #e1e5ed; }
@@ -290,7 +289,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 1px solid 
 
 [data-stop="earth"] .fallback-earth { left: 50%; top: 50%; width: min(74svh, 86vw); transform: translate(-50%, -50%); }
 
-.fallback-passage { display: none; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: var(--passage-opacity, 0); background: #3a4658 url('/images/cities/st-louis/cloud-bank-mobile.webp') center var(--passage-y, 50%) / 160% auto repeat-x; }
+/* Without WebGL the passage is a dark grid of tiles, in the same language as the mosaic. */
+.fallback-passage { display: none; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: var(--passage-opacity, 0); background: linear-gradient(90deg, #ffffff12 1px, transparent 1px) 0 0 / 30px 30px, linear-gradient(#ffffff12 1px, transparent 1px) 0 0 / 30px 30px, #05060c; }
 [data-renderer="fallback"][data-phase="arrival"] .fallback-passage,
 [data-renderer="fallback"][data-phase="departure"] .fallback-passage,
 [data-city-asset="loading"][data-phase="arrival"] .fallback-passage,

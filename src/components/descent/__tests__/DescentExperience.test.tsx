@@ -371,7 +371,7 @@ describe("Earth observation stop", () => {
 });
 
 
-it("flies through clouds for adjacent Earth/city links instead of using the direct-seek fade", async () => {
+it("flies through the pixel passage for adjacent Earth/city links instead of using the direct-seek fade", async () => {
   history.replaceState(null, "", "#earth");
   const { stage, container } = await mount();
   fireEvent.click(container.querySelector('.journey-nav a[href="#st-louis"]')!);
