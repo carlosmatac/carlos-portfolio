@@ -5,6 +5,7 @@ export type BoardEvent = {
   lede: string;
   meta: string;
   image: { src: string; alt: string; width: number; height: number };
+  palette: readonly [string, string, string];
   about: string;
   experience: string;
   /** The project built there; the board draws an edge to it. */
@@ -18,6 +19,7 @@ export const HACKSPAIN: BoardEvent = {
   lede: "Spain's 36-hour hackathon for builders under 30",
   meta: "18–20 Sep 2026 · UPM–ETSIT, Madrid",
   image: { src: "/images/work/hackspain-happyrobot.svg", alt: "HackSpain × HappyRobot", width: 1024, height: 223 },
+  palette: ["#e92520", "#1f8f8a", "#3a1a14"],
   about:
     "HackSpain is an in-person, 36-hour hackathon for 250 builders under 30, held at UPM–ETSIT in Madrid. Its five tracks are led by startups, every team gets free compute, and Spanish venture capital firms judge a €5,000 grand prize.",
   experience:

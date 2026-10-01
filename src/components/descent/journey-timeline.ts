@@ -1,8 +1,28 @@
-import { cloudPassage } from "./transitions/cloud-passage";
+import { passageFlightEase, pixelPassage } from "./transitions/pixel-passage";
 import { places } from "@/content/places";
 import { clamp01, smoothstep } from "./easing";
 import { journeyConfig, type CityId, type CitySceneId, type JourneyConfig } from "./journey-config";
-import { smootherRange, smootherstep } from "./motion";
+import { easeInverse, smootherRange, smootherstep } from "./motion";
+
+/** Phases a guided flight never spends time in. */
+const RESTING = ["earth-observe", "visit", "earth-visit", "ending"];
+
+/**
+ * Progress through a passage phase measured in flight time, not distance: the inverse of the passage easing
+ * over the whole leg between two stops. However the flight accelerates and brakes, the tiles get even time,
+ * and a city's own departure is never squeezed into the first fraction of a second.
+ */
+function passageClock(timeline: JourneyTimeline, phase: JourneyPhase, position: number) {
+  const anchors = Object.values(timeline.anchors).sort((a, b) => a - b);
+  const start = [...anchors].reverse().find(a => a <= phase.startH + 1e-9) ?? 0;
+  const end = anchors.find(a => a >= phase.endH - 1e-9) ?? timeline.totalH;
+  const along = (h: number) => timeline.phases.reduce((sum, p) =>
+    RESTING.includes(p.kind) ? sum : sum + Math.max(0, Math.min(h, p.endH, end) - Math.max(p.startH, start)), 0);
+  const total = along(end) || 1;
+  const clock = (h: number) => easeInverse(passageFlightEase, along(h) / total);
+  const from = clock(phase.startH), to = clock(phase.endH);
+  return to > from ? clamp01((clock(position) - from) / (to - from)) : 1;
+}
 
 export type PhaseKind = "intro" | "earth-reveal" | "earth-observe" | "arrival" | "visit" | "departure" | "transfer" | "earth-visit" | "ending";
 export type JourneyPhase = {
@@ -65,8 +85,9 @@ export const anchorProgress = (id: string) => Object.hasOwn(JOURNEY.anchors, id)
 export function sampleJourney(positionH: number, timeline = JOURNEY, reduced = false) {
   const position = Math.max(0, Math.min(timeline.totalH, positionH));
   const phase = timeline.phases.find(p => position < p.endH - 1e-10) ?? timeline.phases.at(-1)!;
-  const t = clamp01((position - phase.startH) / phase.weightH);
   const { kind, cityIndex: from, nextCityIndex } = phase;
+  const linear = clamp01((position - phase.startH) / phase.weightH);
+  const t = kind === "arrival" || kind === "departure" ? passageClock(timeline, phase, position) : linear;
   const introT = kind === "intro" ? t : 1;
   const to = kind === "transfer" ? nextCityIndex : from;
   // Spread rotation across the flight instead of whipping round in its middle.
@@ -95,7 +116,7 @@ export function sampleJourney(positionH: number, timeline = JOURNEY, reduced = f
     blend = clamp01(((kind === "arrival" ? t : kind === "departure" ? 1 - t : 1) - 0.2) / 0.52);
     text = kind === "arrival" ? smoothstep(0.84, 1, t) : kind === "departure" ? 1 - smoothstep(0, 0.22, t) : 1;
   }
-  const passage = city ? cloudPassage(city.arrivalT * (1 - city.departureT), reduced) : null;
+  const passage = city ? pixelPassage(city.arrivalT * (1 - city.departureT), reduced) : null;
   const altitude = kind === "departure" ? t
     : kind === "arrival" && from !== timeline.phases[0].cityIndex ? 1 - t
       : kind === "transfer" ? (phase.sceneId ? 1 : Math.sin(clamp01(t / 0.34) * Math.PI / 2))
@@ -119,7 +140,7 @@ export type TravelSegment = { from: number; to: number };
 export function travelSegments(from: number, to: number, timeline = JOURNEY): TravelSegment[] {
   const low = Math.min(from, to), high = Math.max(from, to);
   const segments = timeline.phases
-    .filter(p => !["earth-observe", "visit", "earth-visit", "ending"].includes(p.kind))
+    .filter(p => !RESTING.includes(p.kind))
     .map(p => ({ from: Math.max(low, p.startH / timeline.totalH), to: Math.min(high, p.endH / timeline.totalH) }))
     .filter(s => s.to - s.from > 1e-10);
   return to >= from ? segments : segments.reverse().map(s => ({ from: s.to, to: s.from }));

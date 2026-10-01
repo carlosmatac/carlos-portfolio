@@ -1,39 +1,43 @@
-import { clamp01, smoothstep } from "./easing";
+import { clamp01 } from "./easing";
 import { JOURNEY, sampleJourney } from "./journey-timeline";
+import { easeInverse, flightEase, smootherRange } from "./motion";
 export { clamp01, smoothstep } from "./easing";
 
+/** Intro and Earth reveal: the stretch the first gesture flies. */
+const ARRIVAL_H = JOURNEY.anchors.earth;
+
 /**
- * The entrance: the camera pushes into the point-cloud logo, which bursts past it; a flash opens a warp tunnel
- * that brakes progressively until the Earth fills the view. The rest of the scroll travels the Earth.
+ * Normalised time at which the intro flight has covered `fraction` of its way: the inverse of its easing.
+ * Pacing the choreography on this clock gives every beat its share of time, although the flight itself starts
+ * fast (for an immediate response) and brakes for a long time.
+ */
+export const introClock = (fraction: number) => easeInverse(flightEase, fraction);
+
+/**
+ * The entrance: the camera never moves. The logo dissolves while the streamers swim onto great circles around a
+ * sphere, the planet appears inside that cocoon and the coloured field recedes into space.
+ * Every value is a pure function of progress, so scrubbing back plays it in reverse.
  */
 export function journeyAt(progress: number, reducedMotion = false) {
   const p = clamp01(progress);
   const timeline = sampleJourney(p * JOURNEY.totalH, JOURNEY, reducedMotion);
-  const intro = timeline.introT;
-  const zoom = smoothstep(0, 0.32, intro);
-  const fall = clamp01((intro - 0.32) / 0.56);
-  const identity = 1 - smoothstep(0.02, 0.14, intro);
-  const speed = Math.pow(1 - fall, 3) * smoothstep(0.15, 0.32, intro);
-  // The warp and the Earth reveal are one approach, so the camera brakes only once.
-  const [introPhase, revealPhase] = JOURNEY.phases;
-  const approachStart = introPhase.startH + introPhase.weightH * 0.32;
-  const u = clamp01((timeline.positionH - approachStart) / (revealPhase.endH - approachStart));
+  const clock = introClock(timeline.positionH / ARRIVAL_H);
+  const span = (from: number, to: number) => smootherRange(from, to, clock);
+  const identity = 1 - span(0, 0.14);
   return {
     progress: p,
-    zoom: reducedMotion ? 0 : zoom,
-    fall,
-    distance: reducedMotion ? 0 : 1 - Math.pow(1 - fall, 4),
-    approach: reducedMotion ? 0 : 1 - Math.pow(1 - u, 3),
-    speed: reducedMotion ? 0 : speed,
+    clock,
     identity,
-    prompt: 1 - smoothstep(0.01, 0.07, intro),
-    /** The logo's points fly outwards and past the camera. */
-    burst: reducedMotion ? 0 : smoothstep(0.05, 0.36, intro),
-    logo: reducedMotion ? identity : 1 - smoothstep(0.3, 0.42, intro),
-    /** A brief white-blue bloom where the logo was, as the warp opens. */
-    flash: reducedMotion ? 0 : smoothstep(0.13, 0.26, intro) * (1 - smoothstep(0.26, 0.44, intro)),
-    stars: reducedMotion ? 0 : smoothstep(0.08, 0.26, intro),
-    earth: timeline.earth,
+    prompt: 1 - span(0, 0.04),
+    /** The logo's points drift apart and past the camera. */
+    burst: reducedMotion ? 0 : span(0.02, 0.36),
+    logo: reducedMotion ? identity : 1 - span(0.05, 0.34),
+    /** 0: streamers swim freely; 1: wrapped around the globe. */
+    gather: reducedMotion ? 0 : span(0.1, 0.62),
+    worms: reducedMotion ? 0 : 1 - span(0.66, 0.9),
+    /** The coloured, grainy backdrop of the intro. */
+    field: 1 - span(0.5, 0.92),
+    earth: { ...timeline.earth, visible: span(0.36, 0.78) },
     timeline,
   };
 }

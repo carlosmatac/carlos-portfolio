@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as THREE from "three";
-import { gzipSync } from "node:zlib";
 import { createMadrid } from "../cities/create-madrid";
 import {
   assembly, CLUSTERS, madridCamera, madridView, nearest, pipelines, sampleEmbeddings, sampleTowers, TOWERS,
@@ -9,7 +8,7 @@ import { JOURNEY, sampleJourney } from "../journey-timeline";
 
 const rest = { arrivalT: 1, visitT: 0, departureT: 0, ambientSeconds: 0, reduced: false };
 beforeEach(() => {
-  vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(new Response(new Uint8Array(gzipSync(new Uint8Array(128 * 64 * 64 * 2)))))));
+  vi.stubGlobal("fetch", vi.fn());
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -86,11 +85,10 @@ it("frames the four crowns right of the desktop story and above the mobile story
 it("builds the data skyline without images and waits only for the shared cloud volume", async () => {
   const images = vi.spyOn(THREE.TextureLoader.prototype, "load");
   const city = createMadrid("mobile");
-  expect(city.status).toBe("loading");
+  expect(city.status).toBe("ready");
   for (const name of ["Cuatro_Torres", "Data_Lake", "Fog", "Embeddings", "Pipelines", "Pipeline_Guides", "Neighbour_Links", "Beacons"]) {
     expect(city.scene.getObjectByName(name), name).toBeDefined();
   }
-  await city.atmosphere.ready;
   expect(city.status).toBe("ready");
   expect(images).not.toHaveBeenCalled();
   city.dispose(); expect(city.status).toBe("disposed");
@@ -135,7 +133,6 @@ it("samples the same camera on reverse travel, assembles while landing and freez
 
 it("releases every geometry, material and listener exactly once", async () => {
   const city = createMadrid("mobile");
-  await city.atmosphere.ready;
   const resources = new Set<{ dispose: () => void }>();
   city.scene.traverse(object => {
     if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {

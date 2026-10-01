@@ -86,7 +86,7 @@ export default function DescentExperience() {
       if (Math.abs(progress - destination) < 0.0001) return;
       const adjacent = Math.abs(adjacentStop(progress, Math.sign(destination - progress)) - destination) < 1e-8;
       const nextFlight = createFlight(progress, destination, performance.now());
-      if (explicit && !(adjacent && nextFlight.profile === "cloud")) seek = createSeek(progress, destination, performance.now());
+      if (explicit && !(adjacent && nextFlight.profile === "passage")) seek = createSeek(progress, destination, performance.now());
       else flight = nextFlight;
     }
     function busy() { return flight !== null || seek !== null; }
@@ -258,10 +258,10 @@ export default function DescentExperience() {
       stage.style.setProperty("--identity-opacity", frame.identity.toFixed(4));
       stage.style.setProperty("--prompt-opacity", frame.prompt.toFixed(4));
       stage.style.setProperty("--logo-opacity", frame.logo.toFixed(4));
+      stage.style.setProperty("--field-opacity", frame.field.toFixed(4));
       stage.style.setProperty("--earth-opacity", frame.earth.visible.toFixed(4));
       stage.style.setProperty("--city-opacity", String(Number(frame.timeline.passage?.scene === "city")));
       stage.style.setProperty("--passage-opacity", (frame.timeline.passage?.cover ?? 0).toFixed(4));
-      stage.style.setProperty("--passage-y", `${((frame.timeline.passage?.depth ?? 0) - 0.5) * 70}%`);
       stage.style.setProperty("--earth-intro", `${frame.earth.visible * frame.earth.overview * (1 - (frame.timeline.passage?.cover ?? 0))}`);
       stage.style.setProperty("--shade-opacity", `${frame.earth.navigation * (1 - frame.earth.overview) * (1 - (frame.timeline.passage?.cover ?? 0))}`);
       stage.style.setProperty("--nav-opacity", frame.earth.navigation.toFixed(4));
@@ -285,7 +285,8 @@ export default function DescentExperience() {
       stage.dataset.travelling = String(travelling);
       nextButton.setAttribute("aria-disabled", String(travelling));
       backButton.setAttribute("aria-disabled", String(travelling));
-      if (travelling || progress !== target || now - lastRender >= 1000 / 30) {
+      // Full frame rate while anything moves, streamers included; 30 fps while resting on a scene.
+      if (travelling || progress !== target || frame.worms > 0 || now - lastRender >= 1000 / 30) {
         scene?.render(frame, now / 1000, reduced.matches);
         lastRender = now;
       }
@@ -345,6 +346,7 @@ export default function DescentExperience() {
       "--journey-reduced-height": `${(JOURNEY.totalH / 2 + 1) * 100}svh`,
     } as CSSProperties}>
       <div className="descent-viewport" ref={viewport} data-renderer="fallback" data-phase="intro">
+        <div className="intro-field" aria-hidden="true" />
         <div className="descent-canvas" ref={host} />
         <svg className="intro-logo" viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
         <div className="intro-identity" ref={identity}>

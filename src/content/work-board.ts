@@ -78,3 +78,11 @@ export function stackLayout(compact = false) {
   });
   return { heading: { x: 0, y: top }, labels, tools };
 }
+
+/** Bounds of the coloured field behind the Stack area, with a margin around its logos. */
+export function stackPanel(compact = false) {
+  const { heading, tools } = stackLayout(compact), margin = compact ? 14 : 44;
+  const right = Math.max(...tools.map(tool => tool.x)) + STACK_TILE, bottom = Math.max(...tools.map(tool => tool.y)) + STACK_TILE;
+  const x = heading.x - margin, y = heading.y - margin;
+  return { x, y, width: right + margin - x, height: bottom + margin - y };
+}

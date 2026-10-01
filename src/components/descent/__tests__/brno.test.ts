@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as THREE from "three";
-import { gzipSync } from "node:zlib";
 import { createBrno } from "../cities/create-brno";
 import { brnoCamera, brnoCell, brnoView, glyphCoverage, GLYPHS, tramState, TRAM_CYCLE, TRAM_STOP_X } from "../cities/brno-art";
 import { JOURNEY, sampleJourney } from "../journey-timeline";
 
 const rest = { arrivalT: 1, visitT: 0, departureT: 0, ambientSeconds: 0, reduced: false };
 beforeEach(() => {
-  vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(new Response(new Uint8Array(gzipSync(new Uint8Array(128 * 64 * 64 * 2)))))));
+  vi.stubGlobal("fetch", vi.fn());
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -77,10 +76,9 @@ it("frames the whole tram right of the desktop story and above the mobile story"
 it("builds a procedural street without images and waits only for the shared cloud volume", async () => {
   const images = vi.spyOn(THREE.TextureLoader.prototype, "load");
   const city = createBrno("mobile"), { world, display } = parts(city);
-  expect(city.status).toBe("loading");
+  expect(city.status).toBe("ready");
   expect(city.scene.children).toEqual([display]);
   for (const name of ["Tram_Root", "Tram_Body", "Landmark_Petrov", "Facades", "Pantograph_Spark"]) expect(world.getObjectByName(name), name).toBeDefined();
-  await city.atmosphere.ready;
   expect(city.status).toBe("ready");
   expect(images).not.toHaveBeenCalled();
   city.dispose(); expect(city.status).toBe("disposed");
@@ -154,7 +152,6 @@ it("releases every geometry, material, render target and listener exactly once",
   const city = createBrno("mobile"), { world, display } = parts(city), renderer = mockRenderer();
   city.update(rest);
   display.onBeforeRender(renderer as unknown as THREE.WebGLRenderer, city.scene, city.camera, display.geometry, display.material, new THREE.Group());
-  await city.atmosphere.ready;
   const resources = new Set<{ dispose: () => void }>();
   for (const root of [world, city.scene]) root.traverse(object => {
     if (object instanceof THREE.Mesh || object instanceof THREE.Points) {

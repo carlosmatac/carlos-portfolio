@@ -10,10 +10,26 @@ export function smootherstep(t: number) {
   return x * x * x * (x * (x * 6 - 15) + 10);
 }
 
+/**
+ * The intro flight: a single velocity hump. It starts within a few frames (a gaussian onset, so no jolt at t = 0),
+ * peaks early and then brakes continuously to rest, with no second acceleration.
+ */
 export function flightEase(t: number) {
   const x = clamp01(t);
-  const onset = 0.75 * x * (1 - Math.exp(-x / 0.018));
-  return smootherstep(x) + onset * (1 - smootherRange(0.08, 0.5, x));
+  return (1 - (1 - x) ** 3) * (1 - Math.exp(-((x / 0.04) ** 2)));
+}
+
+/** When a flight eased by `ease` has covered `fraction` of its way, as a fraction of its duration. */
+export function easeInverse(ease: (t: number) => number, fraction: number) {
+  const target = clamp01(fraction);
+  if (target <= 0) return 0;
+  if (target >= 1) return 1;
+  let low = 0, high = 1;
+  for (let i = 0; i < 30; i++) {
+    const mid = (low + high) / 2;
+    if (ease(mid) < target) low = mid; else high = mid;
+  }
+  return (low + high) / 2;
 }
 
 export function orbitalAltitude(t: number) {

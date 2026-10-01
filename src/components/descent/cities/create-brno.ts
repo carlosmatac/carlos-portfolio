@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { createCloudVolume } from "../clouds/cloud-volume";
 import { brnoCamera, brnoCell, brnoView, GLYPHS, random, tramState, TRAM_CYCLE, TRAM_STOP_X, type BrnoView } from "./brno-art";
 import { createDotMatrix, DOT_MATRIX_GLSL } from "./dot-matrix";
 import { trackPointer } from "./pointer";
@@ -134,7 +133,6 @@ function buildTram(materials: THREE.Material[], geometries: THREE.BufferGeometry
 
 export function createBrno(quality: CityQuality = "desktop"): CityScene {
   const mobile = quality === "mobile";
-  const atmosphere = createCloudVolume(quality);
   const materials: THREE.Material[] = [], geometries: THREE.BufferGeometry[] = [];
   const own = <T extends THREE.BufferGeometry>(g: T) => { geometries.push(g); return g; };
   const mat = <T extends THREE.Material>(m: T) => { materials.push(m); return m; };
@@ -262,8 +260,8 @@ export function createBrno(quality: CityQuality = "desktop"): CityScene {
   let current: CityFrame = { arrivalT: 1, visitT: 0, departureT: 0, ambientSeconds: 0, reduced: false };
   const follow = { x: 0, y: 0, active: 0 };
   const api: CityScene = {
-    id: "brno-pixel", assetStage: "render", scene, camera, atmosphere,
-    get status() { return disposed ? "disposed" : atmosphere.status === "error" ? "error" : atmosphere.status === "ready" ? "ready" : "loading"; },
+    id: "brno-pixel", assetStage: "render", scene, camera,
+    get status() { return disposed ? "disposed" : "ready"; },
     update(frame) {
       current = frame;
       const seconds = frame.ambientSeconds, dt = Math.min(0.1, Math.max(0, seconds - lastSeconds));
@@ -303,7 +301,7 @@ export function createBrno(quality: CityQuality = "desktop"): CityScene {
       new Set(geometries).forEach(g => g.dispose());
       new Set(materials).forEach(m => m.dispose());
       world.traverse(object => { if (object instanceof THREE.InstancedMesh) object.dispose(); });
-      matrix.dispose(); atmosphere.dispose(); world.clear();
+      matrix.dispose(); world.clear();
     },
   };
   api.resize(1440, 900, quality);
