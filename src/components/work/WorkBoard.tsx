@@ -1,6 +1,7 @@
 "use client";
 
 import "@xyflow/react/dist/style.css";
+import "./work-board.css";
 import {
   Background, BackgroundVariant, Controls, getViewportForBounds, Handle, MiniMap, Position, ReactFlow, ReactFlowProvider, useNodesState, useReactFlow,
   type Edge, type FitViewOptions, type Node, type NodeProps, type Viewport,
@@ -10,8 +11,8 @@ import { memo, useCallback, useEffect, useMemo, useState, type CSSProperties, ty
 import { EVENTS } from "@/content/events";
 import { projects } from "@/content/projects";
 import { STACK } from "@/content/stack";
-import { boardLayout, EVENT_PLACEMENTS, STACK_TILE, stackLayout } from "@/content/work-board";
-import { Drawer, EventDetail, ProjectDetail, ToolDetail } from "./BoardDrawer";
+import { boardLayout, EVENT_PLACEMENTS, STACK_TILE, stackLayout, stackPanel } from "@/content/work-board";
+import { DetailWindow, EventDetail, paletteStyle, ProjectDetail, ToolDetail } from "./DetailWindow";
 import ProjectArt from "./ProjectArt";
 
 type Floating = { float: number; delay: number };
@@ -19,7 +20,8 @@ type ProjectNode = Node<{ slug: string; width: number; height: number } & Floati
 type EventNode = Node<{ id: string; width: number; height: number } & Floating, "event">;
 type ToolNode = Node<{ id: string } & Floating, "tool">;
 type LabelNode = Node<{ text: string; heading?: boolean }, "label">;
-type BoardNode = ProjectNode | EventNode | ToolNode | LabelNode;
+type PanelNode = Node<{ width: number; height: number }, "panel">;
+type BoardNode = ProjectNode | EventNode | ToolNode | LabelNode | PanelNode;
 
 const bySlug = new Map(projects.map(project => [project.slug, project]));
 const byEvent = new Map(EVENTS.map(event => [event.id, event]));
@@ -31,13 +33,16 @@ const floating = (data: Floating) => ({ "--float": `${data.float}s`, "--delay": 
 const Anchor = ({ type, position }: { type: "source" | "target"; position: Position }) =>
   <Handle type={type} position={position} isConnectable={false} className="board-anchor" />;
 
+/** A preview in glass over a blurred, grainy field of the project's colours, with its caption inside. */
 const ProjectCard = memo(function ProjectCard({ data, selected }: NodeProps<ProjectNode>) {
   const project = bySlug.get(data.slug)!;
   return (
-    <div className="board-card" data-selected={selected} data-featured={project.featured ?? false} style={{ ...floating(data), width: data.width }}>
-      <div className="board-card-art" style={{ height: data.height }}><ProjectArt project={project} /></div>
-      <p className="board-card-title">{project.featured && <span className="project-featured">Featured</span>}{project.title}, {project.year}</p>
-      <p className="board-card-detail">{project.role} · {project.tags.slice(0, 2).join(", ")}</p>
+    <div className="board-card" data-selected={selected} data-featured={project.featured ?? false} style={{ ...floating(data), ...paletteStyle(project.palette), width: data.width }}>
+      <div className="board-card-frame" style={{ height: data.height + CAPTION }}>
+        <div className="board-card-art"><ProjectArt project={project} /></div>
+        <p className="board-card-title"><b>{project.featured && <span className="project-featured board-card-chip">Featured</span>}{project.title}</b><span>{project.year}</span></p>
+        <p className="board-card-detail">{project.role} · {project.tags.slice(0, 2).join(", ")}</p>
+      </div>
       <Anchor type="source" position={Position.Bottom} />
     </div>
   );
@@ -46,13 +51,15 @@ const ProjectCard = memo(function ProjectCard({ data, selected }: NodeProps<Proj
 const EventCard = memo(function EventCard({ data, selected }: NodeProps<EventNode>) {
   const event = byEvent.get(data.id)!;
   return (
-    <div className="board-card" data-selected={selected} style={{ ...floating(data), width: data.width }}>
+    <div className="board-card" data-selected={selected} style={{ ...floating(data), ...paletteStyle(event.palette), width: data.width }}>
       <Anchor type="target" position={Position.Top} />
-      <div className="board-card-art event-art" style={{ height: data.height }}>
-        <Image src={event.image.src} alt="" width={event.image.width} height={event.image.height} unoptimized />
+      <div className="board-card-frame" style={{ height: data.height + CAPTION }}>
+        <div className="board-card-art event-art">
+          <Image src={event.image.src} alt="" width={event.image.width} height={event.image.height} unoptimized />
+        </div>
+        <p className="board-card-title">{event.title}</p>
+        <p className="board-card-detail">{event.meta}</p>
       </div>
-      <p className="board-card-title">{event.title}</p>
-      <p className="board-card-detail">{event.meta}</p>
     </div>
   );
 });
@@ -74,7 +81,14 @@ const BoardLabel = memo(function BoardLabel({ data }: NodeProps<LabelNode>) {
     : <p className="board-label">{data.text}</p>;
 });
 
-const nodeTypes = { project: ProjectCard, event: EventCard, tool: ToolTile, label: BoardLabel };
+/** The coloured field the Stack's glass tiles float over. */
+const StackPanel = memo(function StackPanel({ data }: NodeProps<PanelNode>) {
+  return <div className="stack-panel" style={{ width: data.width, height: data.height }} />;
+});
+
+const nodeTypes = { project: ProjectCard, event: EventCard, tool: ToolTile, label: BoardLabel, panel: StackPanel };
+/** Room for the caption inside each card frame; layouts reserve it below every preview. */
+const CAPTION = 44;
 
 export function boardNodes(compact = false): BoardNode[] {
   const cards: BoardNode[] = boardLayout(compact).map(({ slug, x, y, ...data }) => ({
@@ -92,10 +106,12 @@ export function boardNodes(compact = false): BoardNode[] {
     label("stack-heading", stack.heading, { text: "Stack", heading: true }),
     ...stack.labels.map(({ id, text, x, y }) => label(id, { x, y }, { text })),
   ];
+  const { x, y, width, height } = stackPanel(compact);
+  const panel: PanelNode = { id: "stack-panel", type: "panel", position: { x, y }, data: { width, height }, zIndex: -1, draggable: false, selectable: false, focusable: false };
   const tools: BoardNode[] = stack.tools.map(({ id, x, y, ...data }) => ({
     id, type: "tool", position: { x, y }, data: { id, ...data }, ariaRole: "button", ariaLabel: `${byTool.get(id)!.name}. How I use it`,
   }));
-  return [...cards, ...events, ...labels, ...tools];
+  return [panel, ...cards, ...events, ...labels, ...tools];
 }
 
 export const BOARD_EDGES: Edge[] = EVENTS.map(event => ({
@@ -157,7 +173,7 @@ function Board({ compact, onOpen, onClose }: { compact: boolean; onOpen: (id: st
         >
           <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#ffffff14" />
           <MiniMap position="bottom-left" pannable zoomable nodeBorderRadius={2} maskColor="rgba(3, 4, 7, 0.72)" ariaLabel="Board overview"
-            nodeColor={node => bySlug.get(node.id)?.featured || byEvent.has(node.id) ? "#e5d3ae" : node.type === "label" ? "transparent" : "#6f7fd8"} />
+            nodeColor={node => bySlug.get(node.id)?.featured || byEvent.has(node.id) ? "#e5d3ae" : node.type === "label" ? "transparent" : node.type === "panel" ? "#1a2140" : "#6f7fd8"} />
           <Controls position="bottom-right" showInteractive={false} />
         </ReactFlow>
       </div>
@@ -197,14 +213,16 @@ export default function WorkBoard() {
   return (
     <main className="work-board" data-drawer={open ? "open" : "closed"} onKeyDown={onKeyDown}>
       {/* Remounting per layout re-runs fitView for the new arrangement. */}
-      <ReactFlowProvider key={compact ? "compact" : "wide"}>
-        <Board compact={compact} onOpen={show} onClose={hide} />
-      </ReactFlowProvider>
-      <Drawer open={!!open} labelledBy={titleId} onClose={hide}>
+      <div className="work-board-stage" inert={!!open}>
+        <ReactFlowProvider key={compact ? "compact" : "wide"}>
+          <Board compact={compact} onOpen={show} onClose={hide} />
+        </ReactFlowProvider>
+      </div>
+      <DetailWindow open={!!open} labelledBy={titleId} size={project ? "wide" : "narrow"} palette={(project ?? event)?.palette} onClose={hide}>
         {project && <ProjectDetail project={project} titleId={titleId} />}
         {event && <EventDetail event={event} project={bySlug.get(event.project)} titleId={titleId} onOpenProject={() => show(event.project)} />}
         {tool && <ToolDetail tool={tool} titleId={titleId} />}
-      </Drawer>
+      </DetailWindow>
     </main>
   );
 }

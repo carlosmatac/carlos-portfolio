@@ -73,7 +73,7 @@ describe("Work board", () => {
     await act(async () => { render(<WorkBoard />); });
     const cards = document.querySelectorAll(".react-flow__node-project");
     expect(cards).toHaveLength(projects.length);
-    expect(screen.getByText("FlySmart Spain, 2024")).toBeInTheDocument();
+    expect(document.querySelector('.react-flow__node[data-id="flysmart-spain"] .board-card-title')?.textContent).toBe("FlySmart Spain2024");
     fireEvent.click(document.querySelector('.react-flow__node[data-id="flysmart-spain"]')!);
     const drawer = await screen.findByRole("dialog", { name: "FlySmart Spain" });
     expect(location.hash).toBe("#flysmart-spain");
@@ -165,5 +165,75 @@ describe("Stack", () => {
     expect(stack.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(stack);
     expect(stack.getAttribute("aria-pressed")).toBe("true");
+  });
+});
+
+
+describe("Project window", () => {
+  const openProject = async (slug: string) => {
+    await act(async () => { render(<WorkBoard />); });
+    fireEvent.click(document.querySelector(`.react-flow__node[data-id="${slug}"]`)!);
+  };
+
+  it("opens as a centred modal over an inert board and closes from the backdrop", async () => {
+    await openProject("flysmart-spain");
+    const dialog = screen.getByRole("dialog", { name: "FlySmart Spain" });
+    expect(dialog.getAttribute("aria-modal")).toBe("true");
+    expect(document.querySelector(".work-board-stage")?.hasAttribute("inert")).toBe(true);
+    for (const heading of ["The problem", "Approach", "Outcome"]) expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    fireEvent.mouseDown(dialog);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.mouseDown(document.querySelector(".detail-backdrop")!);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.querySelector(".work-board-stage")?.hasAttribute("inert")).toBe(false);
+  });
+
+  it("keeps keyboard focus inside the window", async () => {
+    await openProject("beersp");
+    const close = screen.getByRole("button", { name: "Close details" });
+    const links = screen.getAllByRole("link");
+    links.at(-1)!.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(close);
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(links.at(-1));
+  });
+
+  it("explains Aksum with an animated pipeline and four screenshots of the product", async () => {
+    await openProject("aksum");
+    const diagram = screen.getByText("How Aksum works").closest("figure")!;
+    expect([...diagram.querySelectorAll("h4")].map(stage => stage.textContent)).toEqual(["Capture", "Connect", "Retrieve", "Activate"]);
+    expect(document.querySelectorAll(".detail-gallery img")).toHaveLength(4);
+    expect(screen.getByRole("img", { name: /knowledge graph linking people/ })).toBeInTheDocument();
+  });
+
+  it("shows Zhivel's key figures and an architecture diagram described for screen readers", async () => {
+    await openProject("zhivel");
+    expect([...document.querySelectorAll(".detail-facts strong")].map(fact => fact.textContent)).toEqual(["36 h", "5", "4", "600"]);
+    expect(screen.getByRole("img", { name: /coordinator agent.*HappyRobot/ })).toBeInTheDocument();
+    expect(document.querySelectorAll(".detail-gallery img")).toHaveLength(3);
+  });
+
+  it("lets the architecture project wipe between the original photo and the result", async () => {
+    await openProject("andres-mata-arquitectura");
+    const slider = screen.getByRole("slider", { name: /original photo with the result/ });
+    const compare = document.querySelector<HTMLElement>(".compare")!;
+    expect(compare.style.getPropertyValue("--split")).toBe("50%");
+    fireEvent.change(slider, { target: { value: "20" } });
+    expect(compare.style.getPropertyValue("--split")).toBe("20%");
+    expect(screen.getByRole("img", { name: /original photo$/ }).getAttribute("src")).toContain("elvira-before");
+    expect(screen.getByRole("img", { name: /after the pipeline$/ }).getAttribute("src")).toContain("elvira-after");
+  });
+});
+
+describe("Glass cards", () => {
+  it("paints every card with its project's palette and marks featured ones with a glass chip", async () => {
+    await act(async () => { render(<WorkBoard />); });
+    projects.forEach(project => {
+      const card = document.querySelector<HTMLElement>(`.react-flow__node[data-id="${project.slug}"] .board-card`)!;
+      expect(card.style.getPropertyValue("--p1"), project.slug).toMatch(/^#/);
+      expect(!!card.querySelector(".board-card-chip")).toBe(!!project.featured);
+    });
+    expect(document.querySelector('.react-flow__node[data-id="stack-panel"] .stack-panel')).not.toBeNull();
   });
 });

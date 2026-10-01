@@ -1,5 +1,20 @@
 export type CaseStudyLink = { label: string; href: string };
 
+/** Three colours for the blurred, grainy backdrop of the project's card and window. */
+export type ProjectPalette = readonly [string, string, string];
+
+export type ShowcaseImage = { src: string; alt: string; caption: string; width: number; height: number };
+
+/** Extra material for the largest projects: a diagram, key figures, a gallery and a before/after. */
+export type ProjectShowcase = {
+  diagram?: "aksum" | "zhivel" | "imagery";
+  facts?: { value: string; label: string }[];
+  gallery?: ShowcaseImage[];
+  compare?: { before: string; after: string; alt: string; caption: string; width: number; height: number };
+};
+
+export const DEFAULT_PALETTE: ProjectPalette = ["#5b6cff", "#e5d3ae", "#141a2e"];
+
 /** Real imagery for a project; projects without it use a drawn placeholder. */
 export type ProjectMedia =
   | { kind: "image"; src: string; alt: string; width: number; height: number }
@@ -20,6 +35,8 @@ export type CaseStudy = {
   /** The largest recent projects: shown bigger and first on the work board. */
   featured?: boolean;
   media?: ProjectMedia;
+  palette?: ProjectPalette;
+  showcase?: ProjectShowcase;
 
   // Content blocks
   context: string;
@@ -35,6 +52,7 @@ export type CaseStudy = {
 export const projects: CaseStudy[] = [
   {
     slug: "aksum",
+    palette: ["#6d5bd0", "#c49a6c", "#222a52"],
     title: "Aksum",
     oneLiner: "Internal knowledge platform that puts what an organisation knows to work",
     tags: ["Next.js", "TypeScript", "Supabase", "pgvector", "OpenAI", "AssemblyAI"],
@@ -44,6 +62,15 @@ export const projects: CaseStudy[] = [
     duration: "Since Feb 2026",
     featured: true,
     media: { kind: "image", src: "/images/work/aksum.webp", alt: "The aksum.ai home page: “What your organisation knows, finally put to work”", width: 1280, height: 800 },
+    showcase: {
+      diagram: "aksum",
+      gallery: [
+        { src: "/images/work/aksum/capture.webp", alt: "Interview audio, PDFs, meeting notes and emails flowing into Aksum and coming out as people, companies, topics and sources", caption: "Capture: sources become structured knowledge", width: 768, height: 508 },
+        { src: "/images/work/aksum/meeting.webp", alt: "A meeting brief for Meridian Capital with the contact, prior conversations, open opportunities and next follow-up", caption: "Prepare: a brief before every meeting", width: 836, height: 552 },
+        { src: "/images/work/aksum/activate.webp", alt: "A market report, social post, executive brief and newsletter generated from internal knowledge", caption: "Activate: reports and content grounded in your sources", width: 806, height: 538 },
+        { src: "/images/work/aksum/graph.webp", alt: "The knowledge graph linking people, organisations, documents, events, projects and topics", caption: "The knowledge graph behind every answer", width: 1280, height: 720 },
+      ],
+    },
 
     context:
       "Aksum turns interviews, transcripts, documents and conversations into structured knowledge that sales, strategy and communication teams can reuse. Built for media, consulting and research teams working in emerging markets, it prepares meeting briefs, answers questions grounded in the organisation's own sources and drafts reports.",
@@ -73,6 +100,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "zhivel",
+    palette: ["#2f8a8f", "#e0a24a", "#1b2442"],
     title: "Zhivel",
     oneLiner: "Agentic operations centre that manages a live crisis — HackSpain 2026",
     tags: ["TypeScript", "React", "Express", "HappyRobot", "LLM agents", "SQLite"],
@@ -82,6 +110,20 @@ export const projects: CaseStudy[] = [
     duration: "36-hour hackathon",
     featured: true,
     media: { kind: "video", src: "/videos/zhivel.mp4", poster: "/images/work/zhivel-poster.webp", alt: "Zhivel demo video", width: 1024, height: 576 },
+    showcase: {
+      diagram: "zhivel",
+      facts: [
+        { value: "36 h", label: "from idea to working demo" },
+        { value: "5", label: "people in the team" },
+        { value: "4", label: "specialist agents on the phone" },
+        { value: "600", label: "guests to relocate in 45 minutes" },
+      ],
+      gallery: [
+        { src: "/images/work/zhivel/panel-general.webp", alt: "Operations centre: live map of MADRING with gate queues, the venue status, active incidents and the timeline of agent updates", caption: "The operations centre during the crisis", width: 1280, height: 800 },
+        { src: "/images/work/zhivel/panel-decision.webp", alt: "A pending decision card with approve and reject buttons next to the live map", caption: "Every critical decision waits for a human", width: 1280, height: 800 },
+        { src: "/images/work/zhivel/panel-movil.webp", alt: "The timeline of incidents on a phone", caption: "The same timeline on a phone", width: 390, height: 844 },
+      ],
+    },
 
     context:
       "Built in 36 hours by a team of five for the HappyRobot track of HackSpain 2026 (UPM–ETSIT): “Can AI manage a crisis?”. On a Grand Prix Sunday at MADRING, a water leak closes the main pavilion 45 minutes before opening, with 600 guests on their way. Zhivel's agents replan spaces, catering, shuttles and staff, and pick up the phone to negotiate the new plan.",
@@ -111,6 +153,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "andres-mata-arquitectura",
+    palette: ["#b4543a", "#d8c3a5", "#2f2a26"],
     title: "Andrés Mata Arquitectura",
     oneLiner: "Website for an architecture studio in Granada, working since 1993",
     tags: ["React 19", "Vite", "Tailwind v4", "Motion", "Gemini API", "Vercel"],
@@ -119,6 +162,26 @@ export const projects: CaseStudy[] = [
     status: "In progress",
     featured: true,
     media: { kind: "image", src: "/images/work/andres-mata-arquitectura.webp", alt: "The studio's home page: “Arquitectura que nace del lugar”, beside an animated grid of reference buildings", width: 1280, height: 800 },
+    showcase: {
+      diagram: "imagery",
+      facts: [
+        { value: "1993", label: "the studio's first year" },
+        { value: "17", label: "municipalities with built work" },
+        { value: "47", label: "source images upgraded for the web" },
+      ],
+      compare: {
+        before: "/images/work/andres-mata-arquitectura/elvira-before.webp",
+        after: "/images/work/andres-mata-arquitectura/elvira-after.webp",
+        alt: "A residential building on calle Elvira, Granada",
+        caption: "The same photo before and after the image pipeline: light and colour change, the building's geometry does not.",
+        width: 1200, height: 800,
+      },
+      gallery: [
+        { src: "/images/work/andres-mata-arquitectura/estudio.webp", alt: "The studio section: a portrait of the architect next to “33 años haciendo arquitectura en Granada”", caption: "The studio, in its own words", width: 1280, height: 800 },
+        { src: "/images/work/andres-mata-arquitectura/obra.webp", alt: "A horizontal carousel of selected work: a holiday home with a pool and a multi-purpose building in Motril", caption: "Selected work, one project at a time", width: 1280, height: 800 },
+        { src: "/images/work/andres-mata-arquitectura/territorio.webp", alt: "An engraved dark map of the province of Granada, from Sierra Nevada to the Mediterranean, with the studio's projects", caption: "The territory map, from the Mulhacén to the Mediterranean", width: 1280, height: 800 },
+      ],
+    },
 
     context:
       "A new website for an architecture studio that has worked in Granada since 1993, from village houses in the Alpujarra to housing blocks and hotels. The design language sits between whitewash and concrete, and every decision serves the real buildings.",
@@ -146,6 +209,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "retail-analytics-platform",
+    palette: ["#4a6cf0", "#8a5cf6", "#101a3a"],
     title: "Retail Analytics Data Platform",
     oneLiner: "Scalable data platform for retail intelligence",
     tags: ["dbt", "Snowflake", "SQL", "Python"],
@@ -182,6 +246,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "energy-market-integrator",
+    palette: ["#f5a524", "#c2410c", "#2a170a"],
     title: "Energy Market Integrator",
     oneLiner: "Automated data integration for electricity market APIs",
     tags: ["Python", "Pandas", "REST APIs", "PostgreSQL", "Docker", "Grafana"],
@@ -218,6 +283,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "flysmart-spain",
+    palette: ["#3a8dff", "#ffd166", "#0c1d40"],
     title: "FlySmart Spain",
 
     oneLiner: "Real-time flight aggregation platform",
@@ -256,6 +322,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "beersp",
+    palette: ["#f7b733", "#a3611a", "#24170a"],
     title: "BeerSp",
     oneLiner: "Social craft beer catalog & discovery",
     tags: ["Spring Boot", "Kotlin", "React", "MySQL"],
@@ -293,6 +360,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "embedded-stopwatch",
+    palette: ["#ff5a4d", "#22a06b", "#0c1f16"],
     title: "Bare-metal Chrono",
     oneLiner: "High-precision Arduino chronometer",
     tags: ["C++", "Embedded", "Hardware", "Optimization"],
@@ -329,6 +397,7 @@ export const projects: CaseStudy[] = [
 
   {
     slug: "numbers-letters-solver",
+    palette: ["#b69cff", "#5b3fd6", "#170e33"],
     title: "Algo Solver",
     oneLiner: "Search space optimization engine",
     tags: ["C++", "Algorithms", "Performance", "AI"],
