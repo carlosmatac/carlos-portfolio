@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 /** Animated explanatory diagrams for the featured projects. Motion is CSS only, so reduced motion stops it. */
@@ -140,4 +141,61 @@ export function ImageryDiagram() {
   );
 }
 
-export const DIAGRAMS = { aksum: AksumDiagram, zhivel: ZhivelDiagram, imagery: ImageryDiagram };
+const BOIL = "/images/work/diego-prados/line-boil";
+/** Exposure order of the line boil, as on diegoprados.com: three drawings at 6 per second. */
+const BOIL_ORDER = [1, 2, 3, 2];
+const BOIL_OBJECTS = [
+  { id: "tierra", label: "Earth · Profile", width: 480, height: 488 },
+  { id: "microfono", label: "Microphone · AUGE", width: 480, height: 660 },
+  { id: "microchip", label: "Microchip · Thesis", width: 480, height: 390 },
+] as const;
+
+const BOIL_STEPS = [
+  { title: "Draw", text: "Each object and pose is drawn again from one style reference, on the same canvas. The movement is the difference between drawings.", tech: ["Codex image generation", "Style reference"] },
+  { title: "Clean", text: "Paper becomes transparency: darkness turns into the alpha of a warm charcoal ink. One crop box per object keeps the strokes in register.", tech: ["Python", "Pillow", "WebP with alpha"] },
+  { title: "Register", text: "For the contact door, a manifest stores each drawing's sole and palm lines, so the panel's edge follows Diego's hands on one clock.", tech: ["Manifest", "soleY · contactY"] },
+  { title: "Play", text: "Six drawings per second, 01, 02, 03, 02, with no interpolation. Only sketches in view move; reduced motion keeps the first drawing.", tech: ["IntersectionObserver", "Reduced motion"] },
+];
+
+export function LineBoilDiagram() {
+  return (
+    <figure className="diagram diagram-boil">
+      <figcaption>How the pencil moves</figcaption>
+      <div className="boil-paper">
+        <div className="boil-live">
+          {BOIL_OBJECTS.map(object => (
+            <div key={object.id} className="boil-object">
+              <div className="boil" style={{ aspectRatio: `${object.width} / ${object.height}` }} aria-hidden="true">
+                {[1, 2, 3].map(n => <Image key={n} src={`${BOIL}/${object.id}/${n}.webp`} alt="" width={object.width} height={object.height} unoptimized />)}
+              </div>
+              <span>{object.label}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <ol className="boil-strip" aria-label="The four exposures of one loop: drawings 01, 02, 03 and 02 again">
+            {BOIL_ORDER.map((n, i) => (
+              <li key={i} style={{ animationDelay: `${i / 6}s` }}>
+                <Image src={`${BOIL}/microchip/${n}.webp`} alt="" width={480} height={390} unoptimized />
+                <span>{String(n).padStart(2, "0")}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="boil-note">One loop: four exposures at 6 per second</p>
+        </div>
+      </div>
+      <ol className="dg-stages boil-stages">
+        {BOIL_STEPS.map((step, index) => (
+          <li key={step.title} className="dg-stage">
+            <span className="dg-index">{String(index + 1).padStart(2, "0")}</span>
+            <h4>{step.title}</h4>
+            <p>{step.text}</p>
+            <ul>{step.tech.map(tech => <li key={tech}>{tech}</li>)}</ul>
+          </li>
+        ))}
+      </ol>
+    </figure>
+  );
+}
+
+export const DIAGRAMS = { aksum: AksumDiagram, zhivel: ZhivelDiagram, imagery: ImageryDiagram, lineboil: LineBoilDiagram };

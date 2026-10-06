@@ -7,7 +7,7 @@ export type ShowcaseImage = { src: string; alt: string; caption: string; width: 
 
 /** Extra material for the largest projects: a diagram, key figures, a gallery and a before/after. */
 export type ProjectShowcase = {
-  diagram?: "aksum" | "zhivel" | "imagery";
+  diagram?: "aksum" | "zhivel" | "imagery" | "lineboil";
   facts?: { value: string; label: string }[];
   gallery?: ShowcaseImage[];
   compare?: { before: string; after: string; alt: string; caption: string; width: number; height: number };
@@ -61,7 +61,7 @@ export const projects: CaseStudy[] = [
     status: "Shipped",
     duration: "Since Feb 2026",
     featured: true,
-    media: { kind: "image", src: "/images/work/aksum.webp", alt: "The aksum.ai home page: “What your organisation knows, finally put to work”", width: 1280, height: 800 },
+    media: { kind: "video", src: "/videos/aksum.mp4", poster: "/images/work/aksum-poster.webp", alt: "Aksum product overview video", width: 1440, height: 800 },
     showcase: {
       diagram: "aksum",
       gallery: [
@@ -203,6 +203,110 @@ export const projects: CaseStudy[] = [
     highlights: ["Art Direction", "Image Pipeline", "Interactive Map"],
     links: [
       { label: "GitHub Repo", href: "https://github.com/carlosmatac/arquitecture-web" },
+    ],
+    gallery: [],
+  },
+
+  {
+    slug: "diego-prados",
+    palette: ["#d9d4c9", "#8c857a", "#1a1917"],
+    title: "Diego Prados",
+    oneLiner: "Personal website for a transatlantic policy professional, drawn in pencil on marble",
+    tags: ["Astro", "TypeScript", "Python · Pillow", "Codex image generation", "Remotion", "Neon", "Vercel"],
+    year: "2026",
+    role: "Design & development",
+    status: "Shipped",
+    featured: true,
+    media: { kind: "image", src: "/images/work/diego-prados/portada.webp", alt: "Diego, drawn in pencil, lifts a black panel with his name; beside him, another drawing of him with his arms crossed, on light marble", width: 1800, height: 1200 },
+    showcase: {
+      diagram: "lineboil",
+      facts: [
+        { value: "40", label: "drawings in the greeting" },
+        { value: "24", label: "drawings lift the contact panel" },
+        { value: "6", label: "cities in the route film" },
+        { value: "8", label: "languages in the greeting" },
+      ],
+      gallery: [
+        { src: "/images/work/diego-prados/web-home.webp", alt: "The home page of diegoprados.com: Diego drawn in pencil with his arms crossed, greetings in several languages and his name in large type", caption: "Diego walks in, greets and his name stays", width: 1440, height: 900 },
+        { src: "/images/work/diego-prados/web-ruta.webp", alt: "The route film: a pencil line on the map joins Granada, Madrid and Bologna", caption: "The route film, city by city", width: 1440, height: 900 },
+        { src: "/images/work/diego-prados/web-auge.webp", alt: "The AUGE section, the geopolitics association he founded, with its title in large type and a microphone drawn in pencil", caption: "AUGE, with its pencil microphone", width: 1440, height: 900 },
+        { src: "/images/work/diego-prados/web-contacto.webp", alt: "The contact section: Diego drawn in pencil lifts the dark panel with his email and LinkedIn", caption: "Contact, behind a door he lifts himself", width: 1440, height: 900 },
+      ],
+    },
+
+    context:
+      "A personal website for Diego Prados Jódar, a policy and strategy professional studying Transatlantic Affairs at the College of Europe and the Fletcher School. His path runs from Granada to Madrid, Berkeley, Bologna, Bruges and Boston, and the site tells it with a hand-drawn identity: pencil on marble, charcoal sections and an animated Diego. Built through algoreto.",
+    problem: [
+      "Six cities, a ministry, a law firm and a student association he founded do not fit a one-page CV.",
+      "Every date, role and place had to be verifiable; nothing could be invented to fill space.",
+      "Diego needed to publish his own analysis without depending on a developer.",
+    ],
+    approach: [
+      "A pencil Diego walks in and greets the visitor in eight languages: 40 greeting drawings and a 12-drawing walk cycle, decoded in a rolling window of frames.",
+      "Line boil: every pencil object is drawn three times and shown at 6 drawings per second, in the order 01, 02, 03, 02. No interpolation; the movement is in the pencil.",
+      "Python and Pillow scripts turn the drawings into web frames: the paper becomes transparency, one shared crop box keeps the strokes in register, and WebP keeps them light.",
+      "The contact panel is a garage door. Diego lifts it with his palms, and the panel's edge is derived from the palm line measured in each of the 24 drawings, on a single clock.",
+      "A Remotion film draws his route on a pencil globe, rendered in wide and tall formats.",
+    ],
+    outcome: [
+      "Live at diegoprados.com: static Astro pages and a server-rendered blog on Vercel.",
+      "A password-protected block editor where Diego writes, previews and publishes articles (Neon Postgres, Vercel Blob).",
+      "Every fact on the page comes from a source register; unverified items stay pending.",
+      "Reduced motion keeps every drawing still, and the greeting and the film can be paused.",
+    ],
+    highlights: ["Line Boil Animation", "Frame Pipeline", "Hand-drawn Identity"],
+    links: [
+      { label: "Visit diegoprados.com", href: "https://www.diegoprados.com/" },
+      { label: "GitHub Repo", href: "https://github.com/carlosmatac/diego-portfolio" },
+    ],
+    gallery: [],
+  },
+
+  {
+    slug: "algoreto",
+    palette: ["#c3fb2c", "#dce8d5", "#032611"],
+    title: "algoreto",
+    oneLiner: "Three technical partners bringing AI and software to Spanish small businesses, starting for free",
+    tags: ["React", "Vinext", "Canvas", "Neon", "Vercel"],
+    year: "2026",
+    role: "Partner",
+    status: "In progress",
+    duration: "Since Sep 2026",
+    featured: true,
+    media: { kind: "image", src: "/images/work/algoreto.webp", alt: "The algoreto.com home page: “Tu negocio puede funcionar mejor.” over a lime drawing of squares, rings and cables on deep green", width: 1280, height: 800 },
+    showcase: {
+      facts: [
+        { value: "3", label: "technical partners" },
+        { value: "0 €", label: "for our work in the first projects" },
+        { value: "3", label: "steps: listen, build small, measure" },
+      ],
+      gallery: [
+        { src: "/images/work/algoreto/portfolio.webp", alt: "The algoreto portfolio page: “Proyectos reales. Problemas de verdad.”", caption: "A page for every project", width: 1280, height: 800 },
+        { src: "/images/work/algoreto/case.webp", alt: "The case page of the Andrés Mata Caro architecture studio on algoreto, with sector, date, deliverables and builder", caption: "Each case: where it started, what we built, where it stands", width: 1280, height: 800 },
+        { src: "/images/work/algoreto/builder.webp", alt: "Carlos Mata's builder profile on algoreto, with his studies, work and projects", caption: "Every project has the names of who built it", width: 1280, height: 800 },
+      ],
+    },
+
+    context:
+      "algoreto is a project, not a company: three technical partners who bring AI and software to Spanish small businesses and organisations. Websites, connected tools and simpler everyday tasks, with AI only where it makes sense. The first projects are free in exchange for a real problem, honest feedback and permission to publish measurable results.",
+    problem: [
+      "Small businesses lose hours to manual work, scattered knowledge and tools that do not talk to each other.",
+      "Most have no technical team, and little reason to trust jargon about AI.",
+      "We wanted real projects and real feedback, not more theory.",
+    ],
+    approach: [
+      "A fair exchange: no fee for our work in the first projects; in return, context, time to test and agreement on what can be published.",
+      "Start small: understand the problem, build one thing with the client, then compare time, steps or errors before and after.",
+      "Its own website in plain Spanish, with a page per project and per builder, an animated hand-drawn hero and the original logo vectorised to SVG.",
+      "Builders and their projects live in Neon Postgres and are read at build time into a static export on Vercel.",
+    ],
+    outcome: [
+      "First cases: the bilingual website and menu panel of La Soldadera, a Mexican restaurant in Madrid; the Andrés Mata Caro architecture studio; and Diego Prados' personal site. Aksum is the partners' own product.",
+      "Every case says where it started, what was built and where it stands, with no invented numbers.",
+    ],
+    highlights: ["AI for Small Businesses", "Fair Exchange", "Measurable Results"],
+    links: [
+      { label: "Visit algoreto.com", href: "https://algoreto.com/" },
     ],
     gallery: [],
   },
