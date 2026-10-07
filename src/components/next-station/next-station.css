@@ -1,0 +1,107 @@
+/* Next station: the journey's last page, a departures board whose final row never settles. */
+.next-station {
+  --mono: var(--font-geist-mono), ui-monospace, monospace;
+  --serif: var(--font-serif), Georgia, serif;
+  --gold: #e5d3ae;
+  position: relative; isolation: isolate; min-height: 100svh; overflow: hidden; background: #030407;
+}
+.ns-backdrop { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.ns-backdrop::before, .ns-backdrop::after { content: ""; position: absolute; inset: 0; }
+/* The five cities' colours, low on the horizon, under the same dot matrix the scenes are drawn in. */
+.ns-backdrop::before {
+  background:
+    radial-gradient(ellipse 34% 30% at 12% 104%, #9fb8ec2e, transparent 70%),
+    radial-gradient(ellipse 30% 30% at 32% 108%, #e5d3ae26, transparent 70%),
+    radial-gradient(ellipse 30% 30% at 52% 106%, #f0a98526, transparent 70%),
+    radial-gradient(ellipse 30% 30% at 72% 108%, #efc96b22, transparent 70%),
+    radial-gradient(ellipse 34% 32% at 90% 104%, #b1a3f72e, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 50% 0%, #11152480, transparent 70%);
+}
+.ns-backdrop::after {
+  background: radial-gradient(circle, #ffffff14 1px, transparent 1.4px) 0 0 / 14px 14px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 100%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 100%, black, transparent 75%);
+}
+
+.ns-inner { display: flex; flex-direction: column; justify-content: center; gap: clamp(22px, 4svh, 44px); width: min(1000px, calc(100% - 48px)); min-height: 100svh; margin: 0 auto; padding: 104px 0 40px; }
+
+.ns-route { display: flex; align-items: center; gap: 16px; margin-bottom: clamp(14px, 2.6svh, 26px); font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: #7b8697; }
+.ns-index { color: var(--gold); white-space: nowrap; }
+.ns-index > span { color: #4f5a6b; }
+.ns-track { display: flex; align-items: center; gap: 13px; }
+.ns-track i { position: relative; width: 5px; height: 5px; border-radius: 50%; background: var(--stop); opacity: .8; }
+.ns-track i:not(:last-child)::after { content: ""; position: absolute; left: 7px; top: 2px; width: 9px; height: 1px; background: #3a4352; }
+.ns-track i:nth-last-child(2)::after { background: repeating-linear-gradient(90deg, #6f7b8c 0 2px, transparent 2px 4px); }
+.ns-track i[data-state="unknown"] { width: 7px; height: 7px; background: none; opacity: 1; outline: 1px dashed var(--gold); outline-offset: -1px; animation: ns-beacon 2.4s ease-in-out infinite; }
+@keyframes ns-beacon { 50% { box-shadow: 0 0 0 4px #e5d3ae1f, 0 0 16px #e5d3ae80; } }
+.ns-kicker { font-family: var(--serif); font-style: italic; font-size: 16px; letter-spacing: 0; color: #b4bccb; white-space: nowrap; }
+
+.ns-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; }
+.ns-title h1 { margin: 0 0 0 -.04em; font-family: var(--serif); font-size: clamp(60px, min(9vw, 14svh), 128px); font-weight: 400; line-height: .9; letter-spacing: -.025em; color: #f3f4f8; white-space: nowrap; }
+.ns-title h1 > span { font-style: italic; color: var(--gold); }
+.ns-title p { max-width: 380px; margin: 0 0 6px; font-size: 14px; font-weight: 350; line-height: 1.66; color: #a1aaba; text-wrap: pretty; }
+
+/* The board: dark housing, hairline rows, flaps in warm off-white. */
+.ns-board { --cell: clamp(11px, 1.45vw, 16px); position: relative; padding: 0 clamp(16px, 2.6vw, 28px) 10px; border: 1px solid #ffffff12; border-radius: 14px; background: linear-gradient(#0c0e14f0, #07080df0); box-shadow: 0 30px 80px #000000b0, inset 0 1px #ffffff0d; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.ns-board::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--grain); opacity: .25; mix-blend-mode: overlay; pointer-events: none; }
+.ns-board-top { display: flex; align-items: center; justify-content: space-between; height: 50px; border-bottom: 1px solid #ffffff10; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #c5cad4; }
+.ns-board-top h2 { display: flex; align-items: center; gap: 10px; margin: 0; font: inherit; }
+.ns-board-top h2 > span:last-child { color: #5f6a7b; }
+.ns-board-top p { margin: 0; color: #6f7b8c; }
+.ns-board-top time { margin-left: 8px; color: var(--gold); }
+.ns-live { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: ns-blink 1.6s steps(2, jump-none) infinite; }
+@keyframes ns-blink { 50% { opacity: .25; } }
+.ns-board table { width: 100%; border-collapse: collapse; }
+.ns-board th { padding: 14px 0 8px; font-family: var(--mono); font-size: 8.5px; font-weight: 400; letter-spacing: .2em; text-align: left; text-transform: uppercase; color: #5f6a7b; }
+.ns-board td { padding: 5px 0; border-top: 1px solid #ffffff08; }
+.ns-board :is(th, td):not(:last-child) { padding-right: clamp(10px, 1.8vw, 22px); }
+.ns-board :is(th, td):last-child { width: 1%; }
+.ns-board tbody tr:not([data-current], [data-next]) .flap { color: #b9bfcb; }
+.ns-board tr[data-current] .flap { color: #fff6e2; }
+.ns-board tr[data-current] .ns-status .flap { color: var(--stop); }
+.ns-board tr[data-next] .flap { color: var(--gold); }
+.ns-board tr[data-next] td { border-top-style: dashed; border-top-color: #e5d3ae2e; }
+
+.flap-text { display: inline-flex; gap: 2px; white-space: nowrap; }
+.flap { position: relative; display: grid; place-items: center; width: calc(var(--cell) * 1.08); height: calc(var(--cell) * 1.62); overflow: hidden; border-radius: 2.5px; background: linear-gradient(#1a1d26 50%, #14161e 50%); box-shadow: inset 0 1px #ffffff0d, 0 1px 1px #000000a0; font-family: var(--mono); font-size: var(--cell); font-weight: 500; line-height: 1; color: #e8e4da; perspective: 120px; }
+.flap::after { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - .5px); height: 1px; background: #030407cc; }
+.flap > span { display: block; animation: flap-turn .09s cubic-bezier(.3, .7, .4, 1); }
+@keyframes flap-turn { from { transform: rotateX(-75deg); filter: brightness(1.7); } }
+
+.ns-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.ns-primary, .ns-secondary { display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 20px; border-radius: 999px; font-size: 13px; transition: background .3s, border-color .3s, color .3s; }
+.ns-primary { padding-right: 18px; background: #eceef5; color: #05060a; }
+.ns-primary:hover { background: #fff; }
+.ns-secondary { border: 1px solid #ffffff1f; background: #080a10b8; color: #e1e5ed; }
+.ns-secondary:hover { border-color: #ffffff40; }
+.ns-secondary > span { color: var(--gold); }
+.ns-actions svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .3s; }
+.ns-primary:hover svg { transform: translateX(3px); }
+.ns-restart { display: inline-flex; align-items: center; gap: 10px; min-height: 46px; margin-left: auto; padding: 0 4px; font-size: 13px; color: #9aa6b8; transition: color .3s; }
+.ns-restart svg { color: var(--gold); }
+.ns-restart:hover { color: #fff; }
+.ns-restart:hover svg { transform: rotate(-200deg); transition-duration: .6s; }
+
+@media (max-width: 860px) {
+  .ns-title { flex-direction: column; align-items: flex-start; gap: 18px; }
+  .ns-col-note { display: none; }
+  .ns-board { --cell: clamp(10px, 2.4vw, 15px); }
+}
+@media (max-width: 560px) {
+  .ns-inner { width: calc(100% - 32px); padding-top: 92px; }
+  .ns-route { gap: 12px; font-size: 9px; }
+  .ns-track { gap: 10px; }
+  .ns-track i:not(:last-child)::after { width: 6px; }
+  .ns-kicker { font-size: 14px; }
+  .ns-title p { font-size: 13px; line-height: 1.6; }
+  .ns-col-code { display: none; }
+  .ns-board { --cell: calc((100vw - 32px - 36px - 20px) / 25 / 1.08 - 2px); padding: 0 12px 6px; }
+  .ns-board :is(th, td):not(:last-child) { padding-right: 10px; }
+  .flap-text { gap: 1px; }
+  .ns-board-top { height: 44px; font-size: 9px; letter-spacing: .14em; }
+  .ns-board-top h2 > span:last-child { display: none; }
+  .ns-restart { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flap > span, .ns-live, .ns-track i { animation: none; }
+}

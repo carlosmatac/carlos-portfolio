@@ -184,6 +184,27 @@
 .dg-ring { fill: none; stroke: var(--p2); stroke-width: 1.2; transform-box: fill-box; transform-origin: center; animation: dg-ring 2.8s ease-out infinite; }
 @keyframes dg-ring { from { transform: scale(1); opacity: .9; } to { transform: scale(1.9); opacity: 0; } }
 
+/* Line boil: the real pencil drawings, swapped with steps (01, 02, 03, 02 at 6 per second) on marble. */
+.boil-paper { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 22px; align-items: center; margin-bottom: 16px; padding: 22px 24px; border-radius: 16px; background: radial-gradient(120% 140% at 20% 0%, #f4f2ec, #e3dfd6); color: #1a1917; }
+.boil-live { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: end; }
+.boil-object { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.boil-object span, .boil-strip span, .boil-note { font-family: var(--font-geist-mono), monospace; font-size: 10px; letter-spacing: .08em; color: #6b655c; text-align: center; }
+.boil-note { margin: 10px 0 0; }
+.boil { position: relative; width: 100%; max-height: 190px; }
+.boil img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; animation: .667s step-end infinite; }
+.boil img:nth-child(1) { opacity: 1; animation-name: boil-1; }
+.boil img:nth-child(2) { animation-name: boil-2; }
+.boil img:nth-child(3) { animation-name: boil-3; }
+@keyframes boil-1 { 0% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes boil-2 { 0%, 50% { opacity: 0; } 25%, 75%, 100% { opacity: 1; } }
+@keyframes boil-3 { 0%, 75%, 100% { opacity: 0; } 50% { opacity: 1; } }
+.boil-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.boil-strip li { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 6px 6px; border: 1px solid #1a191722; border-radius: 10px; opacity: .45; animation: boil-mark .667s step-end infinite; }
+.boil-strip li:first-child { opacity: 1; }
+.boil-strip img { width: 100%; height: auto; }
+@keyframes boil-mark { 0% { opacity: 1; border-color: #1a191780; } 25%, 100% { opacity: .45; border-color: #1a191722; } }
+.boil-stages .dg-stage:not(:last-child)::after { top: 24px; }
+
 @media (max-width: 760px) {
   .detail-backdrop { padding: 0; }
   .detail-window, .detail-window[data-size="narrow"] { width: 100%; max-height: 100svh; height: 100svh; padding: 22px 18px 40px; border-radius: 0; border: 0; }
@@ -195,6 +216,8 @@
   .dg-stages { grid-template-columns: 1fr; }
   .dg-stage:not(:last-child)::after { top: auto; bottom: -16px; right: auto; left: 50%; width: 2px; height: 16px; background: linear-gradient(transparent, var(--p2), transparent) 0 0 / 100% 200%; }
   .diagram { padding: 18px 14px; }
+  .boil-paper { grid-template-columns: 1fr; padding: 18px 14px; }
+  .boil-stages .dg-stage:not(:last-child)::after { top: auto; }
 }
 @media (max-width: 640px) {
   .work-board-intro { top: 76px; left: 18px; }

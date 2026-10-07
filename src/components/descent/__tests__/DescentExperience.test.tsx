@@ -14,6 +14,9 @@ vi.mock("../create-descent", () => ({
   },
 }));
 
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
 const pageHeight = JOURNEY.totalH * 1000;
 let sectionHeight = pageHeight + 1000;
 let now = 0, scrollY = stopProgress(0) * pageHeight, reduced = false, coarse = false;
@@ -23,6 +26,7 @@ beforeEach(() => {
   now = 0; scrollY = stopProgress(0) * pageHeight; reduced = false; coarse = false;
   sectionHeight = pageHeight + 1000;
   sceneMock.fail = false;
+  router.push.mockClear();
   sceneMock.render.mockClear(); sceneMock.resize.mockClear(); sceneMock.dispose.mockClear();
   history.replaceState(null, "", "/");
   vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -33,6 +37,8 @@ beforeEach(() => {
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => { callback = cb; return 1; });
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  // next/link prefetches visible links.
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("matchMedia", (query: string) => ({
     get matches() { return query.includes("reduced-motion") ? reduced : query.includes("coarse") ? coarse : false; },
     addEventListener: (_event: string, listener: () => void) => { if (query.includes("reduced-motion")) motionChange = listener; },
@@ -425,7 +431,7 @@ describe("Stepped travel on touch devices", () => {
     expect(stage.getAttribute("data-stop")).toBe("st-louis");
   });
 
-  it("starts from the intro with a tap and offers the way back to Earth at the last station", async () => {
+  it("starts from the intro with a tap and leads on to the next station after the last city", async () => {
     coarse = true;
     scrollY = 0;
     const { stage, container } = await mount();
@@ -434,8 +440,10 @@ describe("Stepped travel on touch devices", () => {
     expect(stage.getAttribute("data-stop")).toBe("earth");
     fireEvent.click(container.querySelector('.journey-nav a[href="#madrid"]')!); advance(1000);
     const next = container.querySelector<HTMLButtonElement>(".station-next")!;
-    expect(next.textContent).toContain("Back to Earth");
+    expect(next.textContent).toContain("Next station?");
+    expect(router.push).not.toHaveBeenCalled();
     fireEvent.click(next); advance(1000);
-    expect(stage.getAttribute("data-stop")).toBe("earth");
+    expect(router.push).toHaveBeenCalledWith("/next-station");
+    expect(stage.getAttribute("data-stop")).toBe("madrid");
   });
 });

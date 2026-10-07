@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, type CSSProperties } from "react";
 import { places } from "@/content/places";
 import { site } from "@/content/site";
@@ -21,6 +23,7 @@ export default function DescentExperience() {
   const host = useRef<HTMLDivElement>(null);
   const identity = useRef<HTMLDivElement>(null);
   const story = useRef<HTMLDivElement>(null);
+  const router = useRef(useRouter());
 
   useEffect(() => {
     const section = journey.current!;
@@ -133,10 +136,10 @@ export default function DescentExperience() {
       if (!swipeDirection || JOURNEY_STOPS.some(stop => Math.abs(stop - target) * JOURNEY.totalH < 0.15)) return;
       moveTo(adjacentStop(target, swipeDirection));
     }
-    /** One station along the way; the last station leads back to the Earth. */
+    /** One station along the way; past the last station lies the next, still unknown one. */
     function step(direction: number) {
       if (busy()) return;
-      if (direction > 0 && Math.abs(progress - JOURNEY_STOPS.at(-1)!) < 1e-6) moveTo(EARTH_STOP, true);
+      if (direction > 0 && Math.abs(progress - JOURNEY_STOPS.at(-1)!) < 1e-6) router.current.push("/next-station");
       else moveTo(adjacentStop(progress, direction));
     }
     function onNavigate(event: MouseEvent) {
@@ -251,7 +254,7 @@ export default function DescentExperience() {
         window.dispatchEvent(new CustomEvent(JOURNEY_STOP_EVENT, { detail: stopId }));
         const index = STATIONS.findIndex(station => station.id === stopId);
         const last = index === STATIONS.length - 1;
-        nextLabel.textContent = last ? "Back to Earth" : STATIONS[index + 1].label;
+        nextLabel.textContent = last ? "Next station?" : STATIONS[index + 1].label;
         nextButton.dataset.last = String(last);
       }
       stage.dataset.city = frame.timeline.city?.id ?? "";
@@ -269,8 +272,9 @@ export default function DescentExperience() {
       display.setAttribute("aria-hidden", String(frame.identity < 0.01));
       chapters.forEach((chapter,index)=>{
         const opacity = index === frame.earth.active ? frame.earth.text : 0;
-        chapter.style.opacity = `${opacity}`;
-        chapter.style.transform = `translateY(${(1-opacity)*16}px)`;
+        // Each line of the chapter staggers in and out from this single value (see .earth-chapter in CSS).
+        chapter.style.setProperty("--reveal", opacity.toFixed(4));
+        chapter.style.visibility = opacity > 0 ? "visible" : "hidden";
         chapter.inert = opacity < 0.5;
         chapter.setAttribute("aria-hidden", String(opacity < 0.5));
       });
@@ -370,21 +374,31 @@ export default function DescentExperience() {
         <div className="fallback-passage" aria-hidden="true" />
         <div className="earth-story" ref={story}>
           {places.map((place,index)=>(
-            <section className="earth-chapter" key={place.id} aria-labelledby={`${place.id}-title`} aria-hidden="true" inert>
-              <p className="chapter-eyebrow"><span>{String(index+1).padStart(2,"0")} / 05</span>{place.chapter}</p>
-              <p className="chapter-country">{place.country}</p>
+            <section className="earth-chapter" key={place.id} aria-labelledby={`${place.id}-title`} aria-hidden="true" inert style={{ "--place-accent": place.accent } as CSSProperties}>
+              <div className="chapter-route">
+                <span className="chapter-index">{String(index+1).padStart(2,"0")}<span> / {String(places.length).padStart(2,"0")}</span></span>
+                <span className="chapter-track" aria-hidden="true">
+                  {places.map((stop,stopIndex)=><i key={stop.id} data-state={stopIndex<index?"past":stopIndex===index?"here":"ahead"} />)}
+                  <i data-state="unknown" />
+                </span>
+                <span className="chapter-kicker">{place.chapter}</span>
+              </div>
+              <p className="chapter-place"><b>{place.code}</b>{place.region} · {place.country}</p>
               <h2 id={`${place.id}-title`}>{place.city}<span>.</span></h2>
-              <p className="chapter-period">{place.period}<span> / {place.type}</span></p>
+              <p className="chapter-period">{place.period}<span>{place.type}</span><span className="chapter-coordinates">{place.coordinates}</span></p>
               <h3>{place.title}</h3>
-              <p className="chapter-description">{place.description}</p>
-              <p className="chapter-coordinates">{place.coordinates}</p>
-              {index===places.length-1 && <a className="chapter-link" href={site.links.linkedin} target="_blank" rel="noopener noreferrer">Let’s connect <span aria-hidden="true">↗</span></a>}
+              <div className="chapter-story">{place.story.map(paragraph=><p key={paragraph}>{paragraph}</p>)}</div>
+              <dl className="chapter-facts">
+                {place.facts.map(fact=><div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
+              </dl>
+              {index===places.length-1 && <Link className="chapter-link" href="/next-station">Next station <span aria-hidden="true">?</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 3.5 13 8l-4.5 4.5" /></svg></Link>}
             </section>
           ))}
         </div>
         <nav className="journey-nav" aria-label="Places along the way" inert aria-hidden="true">
           <a href="#earth" tabIndex={-1}><span className="journey-dot" aria-hidden="true" /><span>Earth</span></a>
           {places.map(place=><a key={place.id} href={`#${place.id}`} tabIndex={-1}><span className="journey-dot" aria-hidden="true" /><span>{place.city}</span></a>)}
+          <Link className="journey-next" href="/next-station" tabIndex={-1} aria-label="Next station"><span className="journey-dot" aria-hidden="true" /><span aria-hidden="true">?</span></Link>
         </nav>
         <div className="station-controls" inert aria-hidden="true">
           <button type="button" className="station-back" data-journey-step="-1" aria-label="Previous station">

@@ -35,14 +35,24 @@ describe("Work board layout", () => {
 describe("Featured projects", () => {
   const featured = projects.filter(project => project.featured).map(project => project.slug);
 
-  it("lists the three largest recent projects first, with real imagery and public links", () => {
-    expect(featured).toEqual(["aksum", "zhivel", "andres-mata-arquitectura"]);
-    expect(projects.slice(0, 3).map(project => project.slug)).toEqual(featured);
-    const links = Object.fromEntries(projects.slice(0, 3).map(project => [project.slug, project.links?.map(link => link.href)]));
+  it("lists the five largest recent projects first, with real imagery and public links", () => {
+    expect(featured).toEqual(["aksum", "zhivel", "andres-mata-arquitectura", "diego-prados", "algoreto"]);
+    expect(projects.slice(0, 5).map(project => project.slug)).toEqual(featured);
+    const links = Object.fromEntries(projects.slice(0, 5).map(project => [project.slug, project.links?.map(link => link.href)]));
     expect(links.aksum).toEqual(["https://www.aksum.ai/", "https://github.com/carlosmatac/sovereign-data"]);
     expect(links.zhivel).toEqual(["https://zhivel.vercel.app/", "https://github.com/pdsdm/hackspain"]);
     expect(links["andres-mata-arquitectura"]).toEqual(["https://github.com/carlosmatac/arquitecture-web"]);
+    expect(links["diego-prados"]).toEqual(["https://www.diegoprados.com/", "https://github.com/carlosmatac/diego-portfolio"]);
+    expect(links.algoreto).toEqual(["https://algoreto.com/"]);
     expect(projects.find(project => project.slug === "zhivel")?.media).toMatchObject({ kind: "video", src: "/videos/zhivel.mp4" });
+    expect(projects.find(project => project.slug === "aksum")?.media).toMatchObject({ kind: "video", src: "/videos/aksum.mp4" });
+  });
+
+  it("keeps every image and video of the projects in public/", () => {
+    projects.forEach(({ media, showcase }) => {
+      const files = [media?.src, media?.kind === "video" ? media.poster : undefined, ...(showcase?.gallery ?? []).map(image => image.src)];
+      files.filter(Boolean).forEach(file => expect(existsSync(join(process.cwd(), "public", file!)), file).toBe(true));
+    });
   });
 
   it.each([false, true])("gives every featured preview more room than any other project (compact: %s)", compact => {
@@ -54,12 +64,15 @@ describe("Featured projects", () => {
 });
 
 describe("Work board", () => {
-  it("loops the Zhivel video silently on the board and offers it with controls in the details", async () => {
+  it("loops the Zhivel and Aksum videos silently on the board and offers them with controls in the details", async () => {
     await act(async () => { render(<WorkBoard />); });
-    const loop = document.querySelector<HTMLVideoElement>('.react-flow__node[data-id="zhivel"] video')!;
-    expect(loop.muted).toBe(true);
-    expect(loop.loop).toBe(true);
-    expect(loop.controls).toBe(false);
+    for (const slug of ["zhivel", "aksum"]) {
+      const loop = document.querySelector<HTMLVideoElement>(`.react-flow__node[data-id="${slug}"] video`)!;
+      expect(loop.muted, slug).toBe(true);
+      expect(loop.loop, slug).toBe(true);
+      expect(loop.controls, slug).toBe(false);
+    }
+    expect(document.querySelector('.react-flow__node[data-id="aksum"] video')?.getAttribute("poster")).toBe("/images/work/aksum-poster.webp");
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalled();
     expect(document.querySelector('.react-flow__node[data-id="aksum"] .board-card')?.getAttribute("data-featured")).toBe("true");
     fireEvent.click(document.querySelector('.react-flow__node[data-id="zhivel"]')!);
@@ -212,6 +225,27 @@ describe("Project window", () => {
     expect([...document.querySelectorAll(".detail-facts strong")].map(fact => fact.textContent)).toEqual(["36 h", "5", "4", "600"]);
     expect(screen.getByRole("img", { name: /coordinator agent.*HappyRobot/ })).toBeInTheDocument();
     expect(document.querySelectorAll(".detail-gallery img")).toHaveLength(3);
+  });
+
+  it("shows Diego Prados' line boil with the real pencil drawings, in the order 01, 02, 03, 02", async () => {
+    await openProject("diego-prados");
+    const diagram = screen.getByText("How the pencil moves").closest("figure")!;
+    const boils = diagram.querySelectorAll(".boil");
+    expect(boils).toHaveLength(3);
+    boils.forEach(boil => expect([...boil.querySelectorAll("img")].map(img => img.getAttribute("src")?.split("/").pop())).toEqual(["1.webp", "2.webp", "3.webp"]));
+    expect([...diagram.querySelectorAll(".boil-strip span")].map(label => label.textContent)).toEqual(["01", "02", "03", "02"]);
+    expect([...diagram.querySelectorAll(".dg-stage h4")].map(stage => stage.textContent)).toEqual(["Draw", "Clean", "Register", "Play"]);
+    diagram.querySelectorAll("img").forEach(img => expect(existsSync(join(process.cwd(), "public", img.getAttribute("src")!))).toBe(true));
+    expect(screen.getByRole("link", { name: /Visit diegoprados\.com/ }).getAttribute("href")).toBe("https://www.diegoprados.com/");
+    expect(document.querySelectorAll(".detail-gallery img")).toHaveLength(4);
+  });
+
+  it("explains algoreto and links to its website", async () => {
+    await openProject("algoreto");
+    const dialog = screen.getByRole("dialog", { name: "algoreto" });
+    expect(dialog.textContent).toContain("three technical partners");
+    expect(dialog.textContent).toContain("first projects are free");
+    expect(screen.getByRole("link", { name: /Visit algoreto\.com/ }).getAttribute("href")).toBe("https://algoreto.com/");
   });
 
   it("lets the architecture project wipe between the original photo and the result", async () => {
