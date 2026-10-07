@@ -31,7 +31,7 @@ describe("Site header", () => {
     const list = document.getElementById(toggle.getAttribute("aria-controls")!)!;
     expect(list.hidden).toBe(false);
     const stations = within(list).getAllByRole("link");
-    expect(stations.map(link => link.getAttribute("href"))).toEqual(["/#earth", "/#st-louis", "/#granada", "/#brno", "/#munich", "/#madrid"]);
+    expect(stations.map(link => link.getAttribute("href"))).toEqual(["/#earth", "/#st-louis", "/#granada", "/#brno", "/#munich", "/#madrid", "/next-station"]);
     fireEvent.click(stations[2]);
     expect(list.hidden).toBe(true);
     fireEvent.click(toggle);

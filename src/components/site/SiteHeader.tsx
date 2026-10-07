@@ -75,6 +75,13 @@ export default function SiteHeader() {
                     </a>
                   </li>
                 ))}
+                <li>
+                  <Link className="site-station-next" href="/next-station" aria-current={pathname === "/next-station" ? "page" : undefined} onClick={close}>
+                    <span className="site-station-index">{String(STATIONS.length).padStart(2, "0")}</span>
+                    <span className="site-station-name">Next station</span>
+                    <span className="site-station-detail">?</span>
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
