@@ -12,11 +12,9 @@ import type { CityScene, CityQuality } from "./cities/types";
 import { createTransition } from "./transitions/create-transition";
 import { PASSAGE_PATTERNS, passageDive, tileSize } from "./transitions/pixel-passage";
 import { createIntroLogo } from "./intro-logo";
-import { logoLayout } from "./intro-logo-art";
-import { createIntroWorms } from "./intro-worms";
 import { trackPointer } from "./cities/pointer";
 
-const FOV = 42, EARTH_RADIUS = 3.3;
+const FOV = 42;
 /** The Earth waits this far behind the logo, so the intro camera already frames it at the overview size. */
 const EARTH_DEPTH = 6;
 /** A mouse resting this long hands the logo over to the swell. */
@@ -31,7 +29,7 @@ export interface DescentScene {
 }
 
 /**
- * The logo, the streamers and the Earth share one still camera: the entrance is a metamorphosis, not a flight.
+ * The logo and the Earth share one still camera: the entrance is a metamorphosis, not a flight.
  * Afterwards the camera moves around the Earth and the cities as before.
  */
 export function createDescent(host: HTMLElement, onContextLost: () => void): DescentScene {
@@ -50,7 +48,6 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
   scene.add(new THREE.HemisphereLight(0xb2c0e4, 0x101119, 1.05));
   const logo = createIntroLogo(scene, window.innerWidth < 700);
   const cursor = trackPointer();
-  const worms = createIntroWorms(host);
 
   const earth = createEarth(scene, renderer.capabilities.getMaxAnisotropy(), renderer.capabilities.maxTextureSize, texture => renderer.initTexture(texture));
   earth.root.position.set(0, 0, -EARTH_DEPTH);
@@ -78,7 +75,6 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 700 ? 1.5 : 2));
       renderer.setSize(width, height);
       transition.resize(width, height, Math.min(renderer.getPixelRatio(), 1.5), tileSize(width));
-      worms.resize(width, height);
       resizeCity();
     },
     render(frame, seconds, reduced) {
@@ -109,16 +105,6 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       const idle = !cursor.hovering(seconds, LOGO_IDLE_SECONDS);
       logo.update({ seconds, dt, burst: frame.burst, opacity: frame.logo, hovering, idle, pointer: cursor.state, reduced });
       earth.update(frame.earth, seconds, reduced);
-      if (frame.worms > 0.002) {
-        projected.copy(earth.root.position).project(camera);
-        const angular = Math.asin(Math.min(1, EARTH_RADIUS / distance));
-        const layout = logoLayout(width, height);
-        worms.update({
-          seconds, dt, opacity: frame.worms, gather: frame.gather, planet: frame.earth.visible,
-          logo: { x: width / 2, y: layout.centreY, r: layout.size * 0.52, length: layout.size * 0.62 },
-          globe: { x: (projected.x + 1) / 2 * width, y: (1 - projected.y) / 2 * height, r: Math.tan(angular) / Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * height / 2 },
-        });
-      } else worms.update({ seconds, dt, opacity: 0, gather: 1, planet: 1, logo: { x: 0, y: 0, r: 0, length: 0 }, globe: { x: 0, y: 0, r: 0 } });
 
       const cityFrame = frame.timeline.city;
       // Cities load once the visitor rests on the Earth, never during the entrance.
@@ -153,7 +139,7 @@ export function createDescent(host: HTMLElement, onContextLost: () => void): Des
       });
       geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose());
       city?.dispose(); transition.dispose();
-      earth.dispose(); cursor.dispose(); worms.dispose();
+      earth.dispose(); cursor.dispose();
       renderer.dispose(); canvas.remove();
     },
   };

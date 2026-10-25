@@ -33,9 +33,12 @@ describe("Intro logo", () => {
     samples.filter(s => !s.edge).forEach(s => expect(s.position[2]).toBeCloseTo(front));
   });
 
-  it("sizes the mark from the viewport height, limited by narrow widths", () => {
-    expect(logoLayout(1440, 900)).toEqual({ size: 396, centreY: 360 });
-    expect(logoLayout(390, 844).size).toBeCloseTo(390 * 0.62);
+  it("sets the mark back, up and to the right of the name, sized by the viewport", () => {
+    const desktop = logoLayout(1440, 900);
+    expect(desktop.size).toBeCloseTo(342);
+    expect(desktop.centreX).toBeGreaterThan(720);
+    expect(desktop.centreY).toBeLessThan(450);
+    expect(logoLayout(390, 844).size).toBeCloseTo(390 * 0.46);
   });
 });
 
@@ -44,7 +47,7 @@ describe("Intro choreography", () => {
     const earth = JOURNEY.anchors.earth / JOURNEY.totalH;
     return journeyAt(flightEase(clock) * earth, reduced);
   };
-  const first = (key: "identity" | "logo" | "gather" | "worms" | "field" | "visible", test: (v: number) => boolean) => {
+  const first = (key: "identity" | "logo" | "warp" | "field" | "visible", test: (v: number) => boolean) => {
     for (let i = 0; i <= 1000; i++) {
       const frame = at(i / 1000), value = key === "visible" ? frame.earth.visible : frame[key];
       if (test(value)) return i / 1000;
@@ -52,12 +55,11 @@ describe("Intro choreography", () => {
     return Infinity;
   };
 
-  it("hands over from the logo to the streamers, to the cocoon, to the planet, in that order", () => {
+  it("dissolves the logo while the strokes warp, then lets the planet appear as they fade", () => {
     expect(first("identity", v => v === 0)).toBeLessThan(first("logo", v => v === 0));
-    expect(first("gather", v => v > 0)).toBeLessThan(first("logo", v => v < 0.5));
-    expect(first("visible", v => v > 0)).toBeGreaterThan(first("gather", v => v > 0.3));
-    expect(first("gather", v => v === 1)).toBeLessThan(first("worms", v => v < 0.5));
-    expect(first("visible", v => v > 0.9)).toBeLessThan(first("worms", v => v === 0));
+    expect(first("warp", v => v > 0)).toBeLessThan(first("logo", v => v < 0.5));
+    expect(first("visible", v => v > 0)).toBeGreaterThan(first("warp", v => v > 0.3));
+    expect(first("warp", v => v === 1)).toBeLessThan(first("field", v => v === 0));
     expect(first("field", v => v < 0.5)).toBeGreaterThan(first("visible", v => v > 0.3));
   });
 
@@ -66,9 +68,9 @@ describe("Intro choreography", () => {
     expect(at(100 / flight).prompt).toBeLessThan(0.9);
   });
 
-  it("keeps the logo still and the streamers away with reduced motion", () => {
+  it("keeps the logo and the strokes still with reduced motion", () => {
     const frame = at(0.1, true);
-    expect([frame.burst, frame.gather, frame.worms]).toEqual([0, 0, 0]);
+    expect([frame.burst, frame.warp]).toEqual([0, 0]);
     expect(frame.logo).toBe(frame.identity);
   });
 });

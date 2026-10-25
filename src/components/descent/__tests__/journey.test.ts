@@ -10,9 +10,9 @@ import { locationVector } from "../create-earth";
 describe("Scroll journey", () => {
   it("starts on the logo and settles on the Earth with the intro layers gone", () => {
     const earthStop = JOURNEY.anchors.earth / JOURNEY.totalH;
-    expect(journeyAt(0)).toMatchObject({ identity: 1, logo: 1, gather: 0, worms: 1, field: 1 });
+    expect(journeyAt(0)).toMatchObject({ identity: 1, logo: 1, warp: 0, field: 1 });
     expect(journeyAt(0).earth.visible).toBe(0);
-    expect(journeyAt(earthStop)).toMatchObject({ identity: 0, logo: 0, gather: 1, worms: 0, field: 0 });
+    expect(journeyAt(earthStop)).toMatchObject({ identity: 0, logo: 0, warp: 1, field: 0 });
     expect(journeyAt(earthStop).earth.visible).toBe(1);
   });
 
@@ -26,7 +26,7 @@ describe("Scroll journey", () => {
     let previous = journeyAt(0);
     for (let ms = 1000 / 60; ms <= flight.duration; ms += 1000 / 60) {
       const frame = journeyAt(flightPosition(flight, ms));
-      for (const key of ["identity", "logo", "burst", "gather", "worms", "field"] as const) {
+      for (const key of ["identity", "logo", "burst", "warp", "field"] as const) {
         expect(Math.abs(frame[key] - previous[key]), `${key} at ${ms.toFixed(0)} ms`).toBeLessThan(0.05);
       }
       expect(Math.abs(frame.earth.visible - previous.earth.visible)).toBeLessThan(0.05);
@@ -66,7 +66,7 @@ describe("Scroll journey", () => {
   it("keeps every chapter reachable without flight for reduced motion", () => {
     places.forEach((_,index)=>{
       const frame=journeyAt(stopProgress(index)+0.01,true);
-      expect([frame.burst,frame.gather,frame.worms,frame.earth.altitude]).toEqual([0,0,0,0]);
+      expect([frame.burst,frame.warp,frame.earth.altitude]).toEqual([0,0,0]);
       expect(frame.earth.active).toBe(index);
       expect(frame.earth.text).toBe(1);
     });

@@ -1,7 +1,6 @@
 /* Next station: the journey's last page, a departures board whose final row never settles. */
 .next-station {
   --mono: var(--font-geist-mono), ui-monospace, monospace;
-  --serif: var(--font-serif), Georgia, serif;
   --gold: #e5d3ae;
   position: relative; isolation: isolate; min-height: 100svh; overflow: hidden; background: #030407;
 }
@@ -34,12 +33,12 @@
 .ns-track i:nth-last-child(2)::after { background: repeating-linear-gradient(90deg, #6f7b8c 0 2px, transparent 2px 4px); }
 .ns-track i[data-state="unknown"] { width: 7px; height: 7px; background: none; opacity: 1; outline: 1px dashed var(--gold); outline-offset: -1px; animation: ns-beacon 2.4s ease-in-out infinite; }
 @keyframes ns-beacon { 50% { box-shadow: 0 0 0 4px #e5d3ae1f, 0 0 16px #e5d3ae80; } }
-.ns-kicker { font-family: var(--serif); font-style: italic; font-size: 16px; letter-spacing: 0; color: #b4bccb; white-space: nowrap; }
+.ns-kicker { font-size: 14px; font-weight: 500; letter-spacing: -.01em; color: #b4bccb; white-space: nowrap; }
 
 .ns-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; }
-.ns-title h1 { margin: 0 0 0 -.04em; font-family: var(--serif); font-size: clamp(60px, min(9vw, 14svh), 128px); font-weight: 400; line-height: .9; letter-spacing: -.025em; color: #f3f4f8; white-space: nowrap; }
-.ns-title h1 > span { font-style: italic; color: var(--gold); }
-.ns-title p { max-width: 380px; margin: 0 0 6px; font-size: 14px; font-weight: 350; line-height: 1.66; color: #a1aaba; text-wrap: pretty; }
+.ns-title h1 { margin: 0 0 0 -.05em; font-size: clamp(60px, min(9vw, 14svh), 132px); font-weight: 800; line-height: .86; letter-spacing: -.06em; color: #f3f4f8; white-space: nowrap; }
+.ns-title h1 > span { color: var(--gold); }
+.ns-title p { max-width: 380px; margin: 0 0 6px; font-size: 14.5px; font-weight: 400; line-height: 1.66; color: #a1aaba; text-wrap: pretty; }
 
 /* The board: dark housing, hairline rows, flaps in warm off-white. */
 .ns-board { --cell: clamp(11px, 1.45vw, 16px); position: relative; padding: 0 clamp(16px, 2.6vw, 28px) 10px; border: 1px solid #ffffff12; border-radius: 14px; background: linear-gradient(#0c0e14f0, #07080df0); box-shadow: 0 30px 80px #000000b0, inset 0 1px #ffffff0d; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }

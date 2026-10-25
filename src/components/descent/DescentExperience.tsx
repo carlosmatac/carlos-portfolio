@@ -12,6 +12,7 @@ import { ST_LOUIS_ART, stLouisComposition } from "./cities/st-louis-art";
 import { LOGO } from "./intro-logo-art";
 import { adjacentStop, JOURNEY_STOPS, createFlight, flightPosition, WheelGesture, createSeek, seekFrame, type JourneySeek, type JourneyFlight } from "./scroll-journey";
 import type { DescentScene } from "./create-descent";
+import { createIntroPattern } from "./intro-pattern";
 import { JOURNEY_STOP_EVENT, STATIONS } from "@/content/stations";
 
 /** Phones and tablets travel with buttons: native scrolling could leave them resting inside a transition. */
@@ -21,6 +22,7 @@ export default function DescentExperience() {
   const journey = useRef<HTMLElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
+  const backdrop = useRef<HTMLCanvasElement>(null);
   const identity = useRef<HTMLDivElement>(null);
   const story = useRef<HTMLDivElement>(null);
   const router = useRef(useRouter());
@@ -41,6 +43,7 @@ export default function DescentExperience() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     const stepped = window.matchMedia(STEPPED_QUERY);
     let scene: DescentScene | null = null;
+    const pattern = createIntroPattern(backdrop.current!);
     let disposed = false, raf = 0, last = 0, progress = 0, target = 0;
     let pageHeight = 1, sectionTop = 0, lastRender = 0;
     let flight: JourneyFlight | null = null;
@@ -177,6 +180,7 @@ export default function DescentExperience() {
       pageHeight = Math.max(1, section.offsetHeight - (stage.clientHeight || window.innerHeight));
       sectionTop = section.getBoundingClientRect().top + window.scrollY;
       scene?.resize();
+      pattern.resize(stage.clientWidth || window.innerWidth, stage.clientHeight || window.innerHeight);
       const width = stage.clientWidth || window.innerWidth, height = stage.clientHeight || window.innerHeight;
       const composition = stLouisComposition(width, height), images = ST_LOUIS_ART[width < 700 ? "mobile" : "desktop"];
       fallbackCity.style.setProperty("--arch-image", `url(${images.arch})`);
@@ -262,6 +266,7 @@ export default function DescentExperience() {
       stage.style.setProperty("--prompt-opacity", frame.prompt.toFixed(4));
       stage.style.setProperty("--logo-opacity", frame.logo.toFixed(4));
       stage.style.setProperty("--field-opacity", frame.field.toFixed(4));
+      pattern.update({ seconds: now / 1000, dt: delta, opacity: frame.field, warp: frame.warp, reduced: reduced.matches });
       stage.style.setProperty("--earth-opacity", frame.earth.visible.toFixed(4));
       stage.style.setProperty("--city-opacity", String(Number(frame.timeline.passage?.scene === "city")));
       stage.style.setProperty("--passage-opacity", (frame.timeline.passage?.cover ?? 0).toFixed(4));
@@ -290,7 +295,7 @@ export default function DescentExperience() {
       nextButton.setAttribute("aria-disabled", String(travelling));
       backButton.setAttribute("aria-disabled", String(travelling));
       // Full frame rate while anything moves, streamers included; 30 fps while resting on a scene.
-      if (travelling || progress !== target || frame.worms > 0 || now - lastRender >= 1000 / 30) {
+      if (travelling || progress !== target || frame.field > 0 || now - lastRender >= 1000 / 30) {
         scene?.render(frame, now / 1000, reduced.matches);
         lastRender = now;
       }
@@ -340,7 +345,7 @@ export default function DescentExperience() {
       window.removeEventListener("touchcancel", onTouchEnd);
       document.removeEventListener("click", onNavigate);
       delete document.documentElement.dataset.journeyStop;
-      observer.disconnect(); scene?.dispose();
+      observer.disconnect(); scene?.dispose(); pattern.dispose();
     };
   }, []);
 
@@ -350,13 +355,19 @@ export default function DescentExperience() {
       "--journey-reduced-height": `${(JOURNEY.totalH / 2 + 1) * 100}svh`,
     } as CSSProperties}>
       <div className="descent-viewport" ref={viewport} data-renderer="fallback" data-phase="intro">
-        <div className="intro-field" aria-hidden="true" />
+        <canvas className="intro-pattern" ref={backdrop} aria-hidden="true" />
         <div className="descent-canvas" ref={host} />
         <svg className="intro-logo" viewBox={`0 0 ${LOGO.viewBox} ${LOGO.viewBox}`} aria-hidden="true">{LOGO.paths.map(d => <path key={d} d={d} />)}</svg>
         <div className="intro-identity" ref={identity}>
-          <h1>Carlos Mata</h1>
-          <p className="intro-role">{site.headlineTop}</p>
-          <a className="scroll-invitation" href="#earth" data-journey-step="1"><span className="invitation-scroll">Scroll to start the journey</span><span className="invitation-tap">Tap to start the journey</span><span className="scroll-stem" aria-hidden="true" /></a>
+          <div className="intro-meta" aria-hidden="true">
+            <p><span>Portfolio</span><span>©{new Date().getFullYear()}</span></p>
+            <p><span>{site.coordinates}</span><span>{site.location}</span></p>
+          </div>
+          <div className="intro-lead">
+            <p className="intro-statement">{site.statement.map(line => <span key={line}>{line}</span>)}</p>
+            <a className="scroll-invitation" href="#earth" data-journey-step="1"><span className="scroll-stem" aria-hidden="true" /><span className="invitation-scroll">Scroll to start the journey</span><span className="invitation-tap">Tap to start the journey</span></a>
+          </div>
+          <h1 className="intro-name"><span>Carlos</span> <span>Mata<i aria-hidden="true">.</i></span></h1>
         </div>
         <div className="fallback-earth" aria-hidden="true" />
         <div className="fallback-city" aria-hidden="true">
