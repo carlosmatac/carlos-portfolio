@@ -81,8 +81,11 @@ export function sampleLogo(spacing = 0.3, layers = 4, depth = 1.6, rng = Math.ra
   return { samples, aspect: (maxX - minX) / (maxY - minY) };
 }
 
-/** Pixel layout of the mark, shared by the WebGL logo and the CSS fallback: centre at 40% height. */
+/**
+ * Pixel layout of the mark, shared by the WebGL logo and the CSS fallback: a second plane behind the name,
+ * up and to the right of it.
+ */
 export function logoLayout(width: number, height: number) {
-  const size = Math.min(height * 0.44, width * 0.62);
-  return { size, centreY: height * 0.4 };
+  if (width < 700) return { size: Math.min(width * 0.46, height * 0.24), centreX: width * 0.7, centreY: height * 0.3 };
+  return { size: Math.min(height * 0.38, width * 0.28), centreX: width * 0.71, centreY: height * 0.42 };
 }

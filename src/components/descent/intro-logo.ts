@@ -98,7 +98,7 @@ export function createIntroLogo(scene: THREE.Scene, mobile: boolean) {
       const ratio = Math.min(window.devicePixelRatio || 1, 2), view = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * distance;
       const layout = logoLayout(width, height), size = layout.size / height * view;
       group.scale.setScalar(size);
-      group.position.set(0, (0.5 - layout.centreY / height) * view, 0);
+      group.position.set((layout.centreX / width - 0.5) * view * width / height, (0.5 - layout.centreY / height) * view, 0);
       uniforms.unit.value = size;
       uniforms.scale.value = height * ratio / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
       uniforms.pixelRatio.value = ratio;
